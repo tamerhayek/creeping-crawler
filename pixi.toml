@@ -1,0 +1,12 @@
+[workspace]
+authors = ["LeoCo <3074025+LeoCo@users.noreply.github.com>"]
+channels = ["conda-forge"]
+name = "crawl4ai"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.12,<3.13"
+crawl4ai = ">=0.3.73,<0.4"
