@@ -1,7 +1,7 @@
 [workspace]
 authors = ["LeoCo <3074025+LeoCo@users.noreply.github.com>"]
 channels = ["conda-forge"]
-name = "crawl4ai"
+name = "crawl4ai-backend"
 platforms = ["osx-arm64"]
 version = "0.1.0"
 

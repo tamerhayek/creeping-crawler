@@ -16,12 +16,13 @@ Crawl4AI Evaluation Framework — a Python tool that evaluates content extractio
 ## Setup
 
 ```bash
-pixi install
+cd backend && pixi install
 ```
 
 ## Running
 
 ```bash
+cd backend
 python main.py list-urls              # List evaluable URLs
 python main.py run --url <URL>        # Evaluate a specific URL
 python main.py serve                  # Start REST API server (default: 127.0.0.1:8003)
@@ -31,28 +32,34 @@ python main.py serve --host 0.0.0.0 --port 8080
 ## Testing
 
 ```bash
+cd backend
 pytest                # Run all tests
 pytest -v             # Verbose
 ```
 
 ## Project structure
 
-- `main.py` — CLI entry point (Click commands: `list-urls`, `run`, `serve`)
-- `crawl_eval/` — Main package
-  - `api.py` — FastAPI REST API (6 endpoints)
-  - `pipeline.py` — Orchestrates crawl → parse → evaluate
-  - `crawler.py` — Fetches page content via Crawl4AI; returns `PageContent` (title, html_text)
-  - `urls.py` — URL/domain management from gold samples
-  - `tokens.py` — Whitespace-based tokenization + markdown stripping
-  - `metrics.py` — Precision/recall/F1 calculation
-  - `gold.py` — Gold standard sample loading
-  - `parsers/` — Content parsers
-    - `base.py` — `ContentParser` ABC
-    - `registry.py` — URL-based parser selection
-    - `default.py` — `PassThroughParser` (no-op)
-    - `wikipedia.py` — `WikipediaParser` with section profiles
-- `gs/` — Gold standard text samples (ground truth)
-- `tests/` — Pytest test suite
+```
+backend/              — Backend (Python, FastAPI, Crawl4AI)
+  main.py             — CLI entry point (Click commands: list-urls, run, serve)
+  pixi.toml           — Backend dependencies
+  crawl_eval/         — Main package
+    api.py            — FastAPI REST API (6 endpoints)
+    pipeline.py       — Orchestrates crawl → parse → evaluate
+    crawler.py        — Fetches page content via Crawl4AI; returns PageContent (title, html_text)
+    urls.py           — URL/domain management from gold samples
+    tokens.py         — Whitespace-based tokenization + markdown stripping
+    metrics.py        — Precision/recall/F1 calculation
+    gold.py           — Gold standard sample loading
+    parsers/          — Content parsers
+      base.py         — ContentParser ABC
+      registry.py     — URL-based parser selection
+      default.py      — PassThroughParser (no-op)
+      wikipedia.py    — WikipediaParser with section profiles
+  gs/                 — Gold standard text samples (ground truth)
+  tests/              — Pytest test suite
+frontend/             — Frontend (to be implemented)
+```
 
 ## REST API endpoints
 
