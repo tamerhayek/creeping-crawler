@@ -22,12 +22,18 @@ cd frontend && pixi install
 
 ## Running
 
+With Docker Compose (recommended):
+```bash
+docker compose up --build
+```
+
+Without Docker:
 ```bash
 # Terminal 1 — backend API (port 8003)
-cd backend && pixi run dev
+cd backend && pixi run app
 
 # Terminal 2 — frontend UI (port 8004)
-cd frontend && pixi run dev
+cd frontend && pixi run app
 ```
 
 Backend CLI commands:

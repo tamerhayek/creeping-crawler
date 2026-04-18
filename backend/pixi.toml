@@ -2,11 +2,12 @@
 authors = ["LeoCo <3074025+LeoCo@users.noreply.github.com>"]
 channels = ["conda-forge"]
 name = "crawl4ai-backend"
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
 version = "0.1.0"
 
 [tasks]
-dev = "python main.py serve"
+app = "python main.py serve"
+install-browsers = "python -m playwright install --with-deps chromium"
 
 [dependencies]
 python = ">=3.11,<3.12"

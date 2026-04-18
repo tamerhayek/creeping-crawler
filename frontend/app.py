@@ -1,8 +1,10 @@
+import os
+
 import requests
 from flask import Flask, redirect, render_template, request, url_for
 
 app = Flask(__name__)
-BACKEND = "http://127.0.0.1:8003"
+BACKEND = os.environ.get("BACKEND_URL", "http://127.0.0.1:8003")
 
 
 def _get_gs_urls() -> list[str]:
@@ -54,4 +56,4 @@ def compare():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8004)
+    app.run(host="0.0.0.0", debug=True, port=8004)

@@ -2,11 +2,11 @@
 authors = ["LeoCo <3074025+LeoCo@users.noreply.github.com>"]
 channels = ["conda-forge"]
 name = "crawl4ai-frontend"
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
 version = "0.1.0"
 
 [tasks]
-dev = "python app.py"
+app = "python app.py"
 
 [dependencies]
 python = ">=3.11,<3.12"
