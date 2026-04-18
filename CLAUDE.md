@@ -54,7 +54,14 @@ backend/              — Backend (Python, FastAPI, Crawl4AI)
   main.py             — CLI entry point (Click commands: list-urls, run, serve)
   pixi.toml           — Backend dependencies
   crawl_eval/         — Main package
-    api.py            — FastAPI REST API (6 endpoints)
+    api.py            — FastAPI app creation + router registration
+    schemas.py        — Pydantic request/response models
+    services.py       — Shared business logic (domain validation, token eval, etc.)
+    routes/           — API endpoint modules (one per domain)
+      parse.py        — /parse endpoint
+      domains.py      — /domains endpoint
+      gold.py         — /gold_standard, /full_gold_standard, /gs_urls, /gold_text
+      evaluate.py     — /evaluate, /full_gs_eval
     pipeline.py       — Orchestrates crawl → parse → evaluate
     crawler.py        — Fetches page content via Crawl4AI; returns PageContent (title, html_text)
     urls.py           — URL/domain management from gold samples
@@ -68,13 +75,13 @@ backend/              — Backend (Python, FastAPI, Crawl4AI)
       wikipedia.py    — WikipediaParser with section profiles
   gs/                 — Gold standard text samples (ground truth)
   tests/              — Pytest test suite
-frontend/             — Frontend (Flask + Jinja2, port 5000)
+frontend/             — Frontend (Flask + Jinja2, port 8004)
   app.py              — Flask app (proxies to backend API)
   pixi.toml           — Frontend dependencies (flask, requests)
   templates/
-    base.html         — Bootstrap 5 base layout
-    index.html        — URL input form + GS dropdown
-    result.html       — Raw / Parsed / Gold Standard comparison + metrics
+    base.html.jinja   — Bootstrap 5 base layout
+    index.html.jinja  — URL input form + GS dropdown
+    result.html.jinja — Raw / Parsed / Gold Standard comparison + metrics
   static/
     style.css         — Text panel styles
 ```
@@ -88,6 +95,8 @@ frontend/             — Frontend (Flask + Jinja2, port 5000)
 | GET | `/gold_standard?url=` | Gold standard entry for a URL |
 | GET | `/full_gold_standard?domain=` | All GS entries for a domain |
 | POST | `/evaluate` | Compute metrics given `{parsed_text, gold_text}` |
+| GET | `/gs_urls` | List all gold standard URLs |
+| GET | `/gold_text?url=` | Gold standard text for a URL (no crawl) |
 | GET | `/full_gs_eval?domain=` | Averaged evaluation across all GS entries for a domain |
 
 Errors: `400` unsupported domain, `404` URL not in GS, `503` unreachable URL.
