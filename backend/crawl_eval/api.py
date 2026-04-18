@@ -9,7 +9,7 @@ from .gold import gold_sample_path_for_url, load_sample_text
 from .metrics import calculate_metrics
 from .parsers import get_parser_for_url
 from .tokens import extract_unique_tokens, strip_markdown
-from .urls import get_domains, get_urls_for_domain, is_supported_domain
+from .urls import get_available_urls, get_domains, get_urls_for_domain, is_supported_domain
 
 app = FastAPI(title="Crawl4AI Evaluation API")
 
@@ -64,6 +64,15 @@ class TokenLevelEval(BaseModel):
 class EvaluateResponse(BaseModel):
     token_level_eval: TokenLevelEval
     x_eval: dict = {}
+
+
+class GsUrlsResponse(BaseModel):
+    urls: list[str]
+
+
+class GoldTextResponse(BaseModel):
+    url: str
+    gold_text: str
 
 
 # ---------------------------------------------------------------------------
@@ -176,6 +185,21 @@ async def full_gold_standard(domain: str = Query(...)):
 def evaluate(body: EvaluateRequest):
     token_eval = _compute_token_eval(body.parsed_text, body.gold_text)
     return EvaluateResponse(token_level_eval=token_eval)
+
+
+@app.get("/gs_urls", response_model=GsUrlsResponse)
+def gs_urls():
+    return GsUrlsResponse(urls=get_available_urls())
+
+
+@app.get("/gold_text", response_model=GoldTextResponse)
+def gold_text(url: str = Query(...)):
+    domain = _domain_of(url)
+    _assert_supported_domain(domain)
+    sample_path = gold_sample_path_for_url(url)
+    if not sample_path.exists():
+        raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
+    return GoldTextResponse(url=url, gold_text=load_sample_text(sample_path))
 
 
 @app.get("/full_gs_eval", response_model=EvaluateResponse)

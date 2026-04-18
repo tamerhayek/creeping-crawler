@@ -1,21 +1,16 @@
 [workspace]
 authors = ["LeoCo <3074025+LeoCo@users.noreply.github.com>"]
 channels = ["conda-forge"]
-name = "crawl4ai-backend"
+name = "crawl4ai-frontend"
 platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
-dev = "python main.py serve"
+dev = "python app.py"
 
 [dependencies]
 python = ">=3.11,<3.12"
-setuptools = "==80.8.0"
-playwright = ">=1.47.2,<2"
-click = ">=8.1.8,<9"
-pytest = ">=8.3.5,<9"
 
 [pypi-dependencies]
-crawl4ai = ">=0.8.0"
-fastapi = ">=0.115.0"
-uvicorn = ">=0.30.0"
+flask = ">=3.0.0"
+requests = ">=2.32.0"

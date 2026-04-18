@@ -17,10 +17,20 @@ Crawl4AI Evaluation Framework — a Python tool that evaluates content extractio
 
 ```bash
 cd backend && pixi install
+cd frontend && pixi install
 ```
 
 ## Running
 
+```bash
+# Terminal 1 — backend API (port 8003)
+cd backend && pixi run dev
+
+# Terminal 2 — frontend UI (port 8004)
+cd frontend && pixi run dev
+```
+
+Backend CLI commands:
 ```bash
 cd backend
 python main.py list-urls              # List evaluable URLs
@@ -58,7 +68,15 @@ backend/              — Backend (Python, FastAPI, Crawl4AI)
       wikipedia.py    — WikipediaParser with section profiles
   gs/                 — Gold standard text samples (ground truth)
   tests/              — Pytest test suite
-frontend/             — Frontend (to be implemented)
+frontend/             — Frontend (Flask + Jinja2, port 5000)
+  app.py              — Flask app (proxies to backend API)
+  pixi.toml           — Frontend dependencies (flask, requests)
+  templates/
+    base.html         — Bootstrap 5 base layout
+    index.html        — URL input form + GS dropdown
+    result.html       — Raw / Parsed / Gold Standard comparison + metrics
+  static/
+    style.css         — Text panel styles
 ```
 
 ## REST API endpoints

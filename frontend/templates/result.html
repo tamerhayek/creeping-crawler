@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %} — Results{% endblock %}
+
+{% block content %}
+
+{# ── Top bar ─────────────────────────────────────────────────────────────── #}
+<div class="d-flex align-items-start gap-3 mb-4">
+  <a href="/" class="btn btn-outline-secondary btn-sm mt-1 flex-shrink-0">← Back</a>
+  <div>
+    {% if data.title %}
+      <h5 class="mb-0">{{ data.title }}</h5>
+    {% endif %}
+    <small class="text-muted text-break">{{ url }}</small>
+  </div>
+</div>
+
+{# ── Error ───────────────────────────────────────────────────────────────── #}
+{% if error %}
+<div class="alert alert-danger">
+  <strong>Error:</strong> {{ error }}
+</div>
+
+{% else %}
+
+{# ── Metrics card ─────────────────────────────────────────────────────────── #}
+{% if data.metrics %}
+<div class="card mb-4 shadow-sm">
+  <div class="card-header fw-semibold">
+    Evaluation Metrics <span class="text-muted fw-normal small">(vs Gold Standard)</span>
+  </div>
+  <div class="card-body">
+    <div class="row g-4">
+      {% for label, val in [
+          ('Precision', data.metrics.precision),
+          ('Recall',    data.metrics.recall),
+          ('F1 Score',  data.metrics.f1)
+      ] %}
+      <div class="col-md-4">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="fw-medium">{{ label }}</span>
+          <span class="badge fs-6
+            {% if val >= 0.7 %}bg-success
+            {% elif val >= 0.4 %}bg-warning text-dark
+            {% else %}bg-danger{% endif %}">
+            {{ "%.4f"|format(val) }}
+          </span>
+        </div>
+        <div class="progress" style="height: 10px;">
+          <div class="progress-bar
+            {% if val >= 0.7 %}bg-success
+            {% elif val >= 0.4 %}bg-warning
+            {% else %}bg-danger{% endif %}"
+            role="progressbar"
+            style="width: {{ (val * 100)|round(1) }}%"
+            aria-valuenow="{{ (val * 100)|round(1) }}"
+            aria-valuemin="0" aria-valuemax="100">
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Text comparison panels ───────────────────────────────────────────────── #}
+{% set has_gs = data.gold_text is defined and data.gold_text %}
+{% set col_class = "col-xl-4 col-md-6" if has_gs else "col-md-6" %}
+
+<div class="row g-3">
+
+  <div class="{{ col_class }}">
+    <div class="panel-header">
+      <span class="fw-semibold">Raw Text</span>
+      <span class="text-muted small">{{ data.html_text.split()|length }} words</span>
+    </div>
+    <div class="text-panel">{{ data.html_text }}</div>
+  </div>
+
+  <div class="{{ col_class }}">
+    <div class="panel-header">
+      <span class="fw-semibold">Parsed Text</span>
+      <span class="text-muted small">{{ data.parsed_text.split()|length }} words</span>
+    </div>
+    <div class="text-panel">{{ data.parsed_text }}</div>
+  </div>
+
+  {% if has_gs %}
+  <div class="{{ col_class }}">
+    <div class="panel-header">
+      <span class="fw-semibold">Gold Standard</span>
+      <span class="text-muted small">{{ data.gold_text.split()|length }} words</span>
+    </div>
+    <div class="text-panel">{{ data.gold_text }}</div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% endif %}
+{% endblock %}

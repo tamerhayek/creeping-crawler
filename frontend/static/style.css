@@ -1,0 +1,45 @@
+body {
+  background-color: #f0f2f5;
+}
+
+/* ── Text comparison panels ─────────────────────────────────────────────── */
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.text-panel {
+  max-height: 560px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+  line-height: 1.65;
+  background: #ffffff;
+  padding: 1rem 1.1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #dee2e6;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  color: #212529;
+}
+
+.text-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.text-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.text-panel::-webkit-scrollbar-thumb {
+  background: #ced4da;
+  border-radius: 3px;
+}
+
+.text-panel::-webkit-scrollbar-thumb:hover {
+  background: #adb5bd;
+}
