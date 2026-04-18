@@ -1,6 +1,7 @@
 import asyncio
 
 import click
+import uvicorn
 
 from crawl_eval.pipeline import crawl_and_evaluate
 from crawl_eval.urls import get_available_urls
@@ -42,6 +43,13 @@ def run_command(url: str) -> None:
 def list_urls_command() -> None:
     for url in AVAILABLE_URLS:
         click.echo(url)
+
+
+@cli.command("serve")
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", default=8003, show_default=True)
+def serve_command(host: str, port: int) -> None:
+    uvicorn.run("crawl_eval.api:app", host=host, port=port)
 
 
 if __name__ == "__main__":

@@ -13,5 +13,9 @@ def gold_sample_path_for_url(url: str) -> Path:
     return GS_DIR / sample_name
 
 
+def load_sample_text(sample_path: Path) -> str:
+    return sample_path.read_text(encoding="utf-8")
+
+
 def load_sample_tokens(sample_path: Path) -> set[str]:
-    return extract_unique_tokens(sample_path.read_text(encoding="utf-8"))
+    return extract_unique_tokens(load_sample_text(sample_path))
