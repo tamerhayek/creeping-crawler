@@ -14,7 +14,7 @@ def _get_gs_urls() -> list[str]:
 
 @app.route("/")
 def index():
-    return render_template("index.html", gs_urls=_get_gs_urls())
+    return render_template("index.html.jinja", gs_urls=_get_gs_urls())
 
 
 @app.route("/compare")
@@ -50,7 +50,7 @@ def compare():
     except Exception as e:
         error = str(e)
 
-    return render_template("result.html", url=url, data=data, error=error, gs_urls=gs_urls)
+    return render_template("result.html.jinja", url=url, data=data, error=error, gs_urls=gs_urls)
 
 
 if __name__ == "__main__":
