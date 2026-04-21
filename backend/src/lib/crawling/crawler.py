@@ -38,20 +38,22 @@ DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
     ),
     "espn.com": CrawlerRunConfig(
         magic=True,
-        # TODO: add css_selector / excluded_selector for ESPN
+        excluded_tags=["style", "script", "link", "meta"],
+        remove_forms=True,
     ),
     "www.xe.com": CrawlerRunConfig(
         magic=True,
-        # TODO: add css_selector / excluded_selector for XE
+        excluded_tags=["style", "script", "link", "meta"],
+        remove_forms=True,
     ),
     "www.cnbc.com": CrawlerRunConfig(
         magic=True,
-        # TODO: add css_selector / excluded_selector for CNBC
+        excluded_tags=["style", "script", "link", "meta"],
+        remove_forms=True,
     ),
 }
 
 _DEFAULT_CONFIG = CrawlerRunConfig(magic=True)
-
 
 def _run_config_for(url: str) -> CrawlerRunConfig:
     """Return the CrawlerRunConfig for the given URL's domain.
@@ -79,5 +81,5 @@ async def fetch_page(url: str) -> PageContent:
         raise RuntimeError(f"Crawl failed for {url}: {result.error_message}")
 
     title = (result.metadata or {}).get("title", "")
-    html_text = result.markdown.raw_markdown if result.markdown else ""
+    html_text = result.html or ""
     return PageContent(title=title, html_text=html_text)
