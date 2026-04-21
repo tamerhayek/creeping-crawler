@@ -1,3 +1,12 @@
+"""FastAPI application entry point for the frontend.
+
+Run from the frontend/ directory:
+    uvicorn src.app:app --host 0.0.0.0 --port 8004
+
+Static files are served from frontend/static/.
+Templates are rendered from frontend/templates/.
+"""
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
