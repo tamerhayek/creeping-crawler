@@ -3,21 +3,18 @@ from urllib.parse import urlparse
 from fastapi import HTTPException
 
 from .crawler import fetch_page
-from .gold import gold_sample_path_for_url, load_sample_text
+from .gold import get_entry_for_url, load_gold_text
 from .metrics import calculate_metrics
 from .tokens import extract_unique_tokens, strip_markdown
-from .urls import is_supported_domain
+from .urls import get_all_entries, is_supported_domain
 from ..schemas import GoldStandardEntry, TokenLevelEval
-
 
 def domain_of(url: str) -> str:
     return urlparse(url).netloc
 
-
 def assert_supported_domain(domain: str) -> None:
     if not is_supported_domain(domain):
         raise HTTPException(status_code=400, detail=f"Unsupported domain: {domain}")
-
 
 def compute_token_eval(parsed_text: str, gold_text: str) -> TokenLevelEval:
     extracted_tokens = extract_unique_tokens(strip_markdown(parsed_text))
@@ -29,11 +26,10 @@ def compute_token_eval(parsed_text: str, gold_text: str) -> TokenLevelEval:
         f1=metrics.f1,
     )
 
-
 async def build_gold_entry(url: str) -> GoldStandardEntry:
-    domain = domain_of(url)
-    sample_path = gold_sample_path_for_url(url)
-    gold_text = load_sample_text(sample_path)
+    entry = get_entry_for_url(url)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
 
     try:
         page = await fetch_page(url)
@@ -42,8 +38,8 @@ async def build_gold_entry(url: str) -> GoldStandardEntry:
 
     return GoldStandardEntry(
         url=url,
-        domain=domain,
+        domain=domain_of(url),
         title=page.title,
         html_text=page.html_text,
-        gold_text=gold_text,
+        gold_text=entry.get("gold_text", ""),
     )

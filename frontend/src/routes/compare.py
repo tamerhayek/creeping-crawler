@@ -29,6 +29,7 @@ def compare(request: Request, url: str = ""):
                 data["metrics"] = metrics
 
     return templates.TemplateResponse(
-        "result.html.jinja",
-        {"request": request, "url": url, "data": data, "error": error, "gs_urls": gs_urls},
+        request=request,
+        name="result.html.jinja",
+        context={"url": url, "data": data, "error": error, "gs_urls": gs_urls},
     )

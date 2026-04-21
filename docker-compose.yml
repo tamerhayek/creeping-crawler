@@ -3,6 +3,8 @@ services:
     build: ./backend
     ports:
       - "8003:8003"
+    volumes:
+      - ./gs_data:/gs_data:ro
 
   frontend:
     build: ./frontend
@@ -10,5 +12,7 @@ services:
       - "8004:8004"
     environment:
       BACKEND_URL: http://backend:8003
+    volumes:
+      - ./gs_data:/gs_data:ro
     depends_on:
       - backend

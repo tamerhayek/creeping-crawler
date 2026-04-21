@@ -1,31 +1,32 @@
+import json
 from pathlib import Path
 from urllib.parse import urlparse
 
+def _gs_data_dir() -> Path:
+    # In Docker: montata su /gs_data
+    docker_path = Path("/gs_data")
+    if docker_path.exists():
+        return docker_path
+    # In locale: backend/src/lib/ -> backend/src/ -> backend/ -> project root -> gs_data/
+    return Path(__file__).resolve().parents[3] / "gs_data"
 
-GS_DIR = Path("gs")
-
-
-def sample_filename_to_url(filename: str) -> str:
-    stem = filename.removesuffix(".txt")
-    netloc, path_suffix = stem.split("_", 1)
-    return f"https://{netloc}/{path_suffix.replace('_', '/')}"
-
+def get_all_entries() -> list[dict]:
+    entries = []
+    for json_file in _gs_data_dir().glob("*_gs.json"):
+        text = json_file.read_text(encoding="utf-8").strip()
+        if not text:
+            continue
+        entries.extend(json.loads(text))
+    return entries
 
 def get_available_urls() -> list[str]:
-    urls = [
-        sample_filename_to_url(path.name)
-        for path in GS_DIR.glob("*.txt")
-    ]
-    return sorted(urls)
-
+    return sorted({e["url"] for e in get_all_entries()})
 
 def get_domains() -> list[str]:
     return sorted({urlparse(url).netloc for url in get_available_urls()})
 
-
 def is_supported_domain(domain: str) -> bool:
     return domain in get_domains()
-
 
 def get_urls_for_domain(domain: str) -> list[str]:
     return [url for url in get_available_urls() if urlparse(url).netloc == domain]

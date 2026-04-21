@@ -3,11 +3,11 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Query
 
 from ..lib.crawler import fetch_page
-from ..lib.gold import gold_sample_path_for_url, load_sample_text
+from ..lib.gold import load_gold_text
 from ..lib.parsers import get_parser_for_url
-from ..schemas import EvaluateRequest, EvaluateResponse, TokenLevelEval
 from ..lib.services import assert_supported_domain, compute_token_eval
 from ..lib.urls import get_urls_for_domain
+from ..schemas import EvaluateRequest, EvaluateResponse, TokenLevelEval
 
 router = APIRouter()
 
@@ -24,8 +24,9 @@ async def full_gs_eval(domain: str = Query(...)):
     urls = get_urls_for_domain(domain)
 
     async def _eval_url(url: str) -> TokenLevelEval:
-        sample_path = gold_sample_path_for_url(url)
-        gold_text = load_sample_text(sample_path)
+        gold_text = load_gold_text(url)
+        if not gold_text:
+            raise HTTPException(status_code=404, detail=f"No gold text for: {url}")
         try:
             page = await fetch_page(url)
         except RuntimeError as e:
@@ -36,14 +37,10 @@ async def full_gs_eval(domain: str = Query(...)):
 
     evals = await asyncio.gather(*[_eval_url(url) for url in urls])
     n = len(evals)
-    avg_precision = sum(e.precision for e in evals) / n
-    avg_recall = sum(e.recall for e in evals) / n
-    avg_f1 = sum(e.f1 for e in evals) / n
-
     return EvaluateResponse(
         token_level_eval=TokenLevelEval(
-            precision=avg_precision,
-            recall=avg_recall,
-            f1=avg_f1,
+            precision=sum(e.precision for e in evals) / n,
+            recall=sum(e.recall for e in evals) / n,
+            f1=sum(e.f1 for e in evals) / n,
         )
     )

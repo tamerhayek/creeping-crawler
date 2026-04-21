@@ -1,21 +1,13 @@
-from pathlib import Path
-from urllib.parse import urlparse
-
 from .tokens import extract_unique_tokens
+from .urls import get_all_entries
 
+def get_entry_for_url(url: str) -> dict | None:
+    return next((e for e in get_all_entries() if e["url"] == url), None)
 
-GS_DIR = Path("gs")
+def load_gold_text(url: str) -> str | None:
+    entry = get_entry_for_url(url)
+    return entry.get("gold_text") if entry else None
 
-
-def gold_sample_path_for_url(url: str) -> Path:
-    parsed = urlparse(url)
-    sample_name = f"{parsed.netloc}{parsed.path}".strip("/").replace("/", "_") + ".txt"
-    return GS_DIR / sample_name
-
-
-def load_sample_text(sample_path: Path) -> str:
-    return sample_path.read_text(encoding="utf-8")
-
-
-def load_sample_tokens(sample_path: Path) -> set[str]:
-    return extract_unique_tokens(load_sample_text(sample_path))
+def load_gold_tokens(url: str) -> set[str]:
+    text = load_gold_text(url)
+    return extract_unique_tokens(text) if text else set()

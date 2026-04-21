@@ -3,15 +3,15 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Query
 
 from ..lib.crawler import fetch_page
-from ..lib.gold import gold_sample_path_for_url, load_sample_text
+from ..lib.gold import get_entry_for_url, load_gold_text
+from ..lib.services import assert_supported_domain, build_gold_entry, domain_of
+from ..lib.urls import get_available_urls, get_urls_for_domain
 from ..schemas import (
     FullGoldStandardResponse,
     GoldStandardResponse,
     GoldTextResponse,
     GsUrlsResponse,
 )
-from ..lib.services import assert_supported_domain, build_gold_entry, domain_of
-from ..lib.urls import get_available_urls, get_urls_for_domain
 
 router = APIRouter()
 
@@ -21,8 +21,8 @@ async def gold_standard(url: str = Query(...)):
     domain = domain_of(url)
     assert_supported_domain(domain)
 
-    sample_path = gold_sample_path_for_url(url)
-    if not sample_path.exists():
+    entry = get_entry_for_url(url)
+    if entry is None:
         raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
 
     try:
@@ -30,13 +30,12 @@ async def gold_standard(url: str = Query(...)):
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    gold_text = load_sample_text(sample_path)
     return GoldStandardResponse(
         url=url,
         domain=domain,
         title=page.title,
         html_text=page.html_text,
-        gold_text=gold_text,
+        gold_text=entry.get("gold_text", ""),
     )
 
 
@@ -55,9 +54,8 @@ def gs_urls():
 
 @router.get("/gold_text", response_model=GoldTextResponse)
 def gold_text(url: str = Query(...)):
-    domain = domain_of(url)
-    assert_supported_domain(domain)
-    sample_path = gold_sample_path_for_url(url)
-    if not sample_path.exists():
+    assert_supported_domain(domain_of(url))
+    text = load_gold_text(url)
+    if text is None:
         raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
-    return GoldTextResponse(url=url, gold_text=load_sample_text(sample_path))
+    return GoldTextResponse(url=url, gold_text=text)

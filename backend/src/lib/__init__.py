@@ -1,5 +1,5 @@
 from .crawler import fetch_page, PageContent
-from .gold import gold_sample_path_for_url, load_sample_text, load_sample_tokens
+from .gold import get_entry_for_url, load_gold_text, load_gold_tokens
 from .metrics import TokenMetrics, calculate_metrics
 from .services import assert_supported_domain, build_gold_entry, compute_token_eval, domain_of
 from .tokens import extract_unique_tokens, strip_markdown

@@ -11,6 +11,7 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(
-        "index.html.jinja",
-        {"request": request, "gs_urls": get_gs_urls()},
+        request=request,
+        name="index.html.jinja",
+        context={"gs_urls": get_gs_urls()},
     )
