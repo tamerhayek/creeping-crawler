@@ -10,6 +10,14 @@ from urllib.parse import urlparse
 from .base import ContentParser
 from .default import PassThroughParser
 from .wikipedia import WikipediaParser
+from .cnbc import CnbcParser
+from .espn import EspnParser
+
+DOMAIN_CONFIGS: dict[str, ContentParser] = {
+    "it.wikipedia.org": WikipediaParser(),
+    "espn.com": EspnParser(),
+    "www.cnbc.com": CnbcParser(),
+}
 
 def get_parser_for_url(url: str) -> ContentParser:
     """Return the appropriate parser for the given URL.
@@ -18,7 +26,7 @@ def get_parser_for_url(url: str) -> ContentParser:
     """
     hostname = urlparse(url).netloc.lower()
 
-    if hostname.endswith("wikipedia.org"):
-        return WikipediaParser()
+    if hostname in DOMAIN_CONFIGS:
+        return DOMAIN_CONFIGS[hostname]
 
     return PassThroughParser()
