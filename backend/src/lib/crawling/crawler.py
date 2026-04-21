@@ -2,6 +2,9 @@
 
 Fetches pages and returns their raw markdown content and metadata.
 The markdown is used as input for domain-specific parsers.
+
+To add a crawl config for a new domain, add an entry to DOMAIN_CONFIGS
+using the domain suffix as key (e.g. "espn.com").
 """
 
 from dataclasses import dataclass
@@ -18,26 +21,46 @@ class PageContent:
     html_text: str  # raw markdown produced by Crawl4AI — input to the parser
 
 
-def _run_config_for(url: str) -> CrawlerRunConfig:
-    """Return a domain-specific CrawlerRunConfig.
+# Registry of domain-specific crawl configurations.
+# Keys are exact domain strings as they appear in domains.json.
+# Only exact netloc matches are accepted — subdomains and variants are excluded.
+DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
+    "it.wikipedia.org": CrawlerRunConfig(
+        magic=True,
+        css_selector=".mw-parser-output > p, .mw-parser-output > section",
+        excluded_tags=["style", "script", "link", "meta"],
+        excluded_selector=(
+            "table.infobox, .shortdescription, .hatnote, .toc, "
+            ".navbox, .vertical-navbox, .metadata, .mw-editsection, "
+            ".reflist, #catlinks"
+        ),
+        remove_forms=True,
+    ),
+    "espn.com": CrawlerRunConfig(
+        magic=True,
+        # TODO: add css_selector / excluded_selector for ESPN
+    ),
+    "www.xe.com": CrawlerRunConfig(
+        magic=True,
+        # TODO: add css_selector / excluded_selector for XE
+    ),
+    "www.cnbc.com": CrawlerRunConfig(
+        magic=True,
+        # TODO: add css_selector / excluded_selector for CNBC
+    ),
+}
 
-    Wikipedia pages use a targeted CSS selector to exclude navigation,
-    infoboxes, references, and other non-content elements before crawling.
-    All other domains use the default magic-mode config.
+_DEFAULT_CONFIG = CrawlerRunConfig(magic=True)
+
+
+def _run_config_for(url: str) -> CrawlerRunConfig:
+    """Return the CrawlerRunConfig for the given URL's domain.
+
+    Looks up the exact netloc in DOMAIN_CONFIGS.
+    Falls back to a plain magic-mode config if the domain is not listed.
     """
-    if urlparse(url).netloc.endswith("wikipedia.org"):
-        return CrawlerRunConfig(
-            magic=True,
-            css_selector=".mw-parser-output > p, .mw-parser-output > section",
-            excluded_tags=["style", "script", "link", "meta"],
-            excluded_selector=(
-                "table.infobox, .shortdescription, .hatnote, .toc, "
-                ".navbox, .vertical-navbox, .metadata, .mw-editsection, "
-                ".reflist, #catlinks"
-            ),
-            remove_forms=True,
-        )
-    return CrawlerRunConfig(magic=True)
+    netloc = urlparse(url).netloc.lower()
+    return DOMAIN_CONFIGS.get(netloc, _DEFAULT_CONFIG)
 
 
 async def fetch_page(url: str) -> PageContent:
