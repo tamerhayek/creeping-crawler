@@ -1,4 +1,20 @@
-.pixi/
+# Git
+.git/
+.gitignore
+
+# Python
 __pycache__/
+**/__pycache__/
 *.pyc
+*.pyo
+
+# Env e IDE
+.env
+.venv/
+.pixi/
+.idea/
+.vscode/
+
+# Docker stesso
 Dockerfile
+.dockerignore
