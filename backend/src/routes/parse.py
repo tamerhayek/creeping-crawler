@@ -7,7 +7,6 @@ from ..lib.services import assert_supported_domain, domain_of
 
 router = APIRouter()
 
-
 @router.get("/parse", response_model=ParseResponse)
 async def parse(url: str = Query(...)):
     domain = domain_of(url)

@@ -3,11 +3,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 def _gs_data_dir() -> Path:
-    # In Docker: montata su /gs_data
     docker_path = Path("/gs_data")
     if docker_path.exists():
         return docker_path
-    # In locale: backend/src/lib/ -> backend/src/ -> backend/ -> project root -> gs_data/
     return Path(__file__).resolve().parents[3] / "gs_data"
 
 def get_all_entries() -> list[dict]:
