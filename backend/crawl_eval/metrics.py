@@ -16,8 +16,8 @@ def calculate_metrics(extracted_tokens: set[str], sample_tokens: set[str]) -> To
     extracted_count = len(extracted_tokens)
     sample_count = len(sample_tokens)
 
-    recall = intersection_count / extracted_count if extracted_count else 0.0
-    precision = intersection_count / sample_count if sample_count else 0.0
+    precision = intersection_count / extracted_count if extracted_count else 0.0
+    recall = intersection_count / sample_count if sample_count else 0.0
     f1 = (
         2 * precision * recall / (precision + recall)
         if precision + recall
