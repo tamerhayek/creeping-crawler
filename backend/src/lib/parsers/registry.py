@@ -11,7 +11,6 @@ from .base import ContentParser
 from .default import PassThroughParser
 from .wikipedia import WikipediaParser
 
-
 def get_parser_for_url(url: str) -> ContentParser:
     """Return the appropriate parser for the given URL.
 

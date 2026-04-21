@@ -2,10 +2,16 @@ import asyncio
 
 from fastapi import APIRouter, HTTPException, Query
 
-from ..lib.crawler import fetch_page
-from ..lib.gold import get_entry_for_url, load_gold_text
-from ..lib.services import assert_supported_domain, build_gold_entry, domain_of
-from ..lib.urls import get_available_urls, get_urls_for_domain
+from ..lib import (
+    assert_supported_domain,
+    build_gold_entry,
+    domain_of,
+    fetch_page,
+    get_available_urls,
+    get_entry_for_url,
+    get_urls_for_domain,
+    load_gold_text,
+)
 from ..schemas import (
     FullGoldStandardResponse,
     GoldStandardEntry,

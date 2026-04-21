@@ -2,7 +2,6 @@
 
 from abc import ABC, abstractmethod
 
-
 class ContentParser(ABC):
     """Interface that every domain-specific parser must implement."""
 

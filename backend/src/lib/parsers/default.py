@@ -2,7 +2,6 @@
 
 from .base import ContentParser
 
-
 class PassThroughParser(ContentParser):
     """Returns the raw markdown unchanged.
 

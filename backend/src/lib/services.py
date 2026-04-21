@@ -8,24 +8,21 @@ from urllib.parse import urlparse
 
 from fastapi import HTTPException
 
-from .crawler import fetch_page
-from .gold import get_entry_for_url, load_gold_text
-from .metrics import calculate_metrics
-from .tokens import extract_unique_tokens, strip_markdown
-from .urls import is_supported_domain
+from .crawling.crawler import fetch_page
+from .evaluation.metrics import calculate_metrics
+from .evaluation.tokens import extract_unique_tokens, strip_markdown
+from .gold_standard.gold import get_entry_for_url, load_gold_text
+from .gold_standard.urls import is_supported_domain
 from ..schemas import GoldStandardEntry, TokenLevelEval
-
 
 def domain_of(url: str) -> str:
     """Extract the netloc (domain) from a URL."""
     return urlparse(url).netloc
 
-
 def assert_supported_domain(domain: str) -> None:
     """Raise HTTP 400 if the domain has no gold standard entries."""
     if not is_supported_domain(domain):
         raise HTTPException(status_code=400, detail=f"Unsupported domain: {domain}")
-
 
 def compute_token_eval(parsed_text: str, gold_text: str) -> TokenLevelEval:
     """Compute token-level precision, recall, and F1 between parsed and gold text.
@@ -41,7 +38,6 @@ def compute_token_eval(parsed_text: str, gold_text: str) -> TokenLevelEval:
         recall=metrics.recall,
         f1=metrics.f1,
     )
-
 
 async def build_gold_entry(url: str) -> GoldStandardEntry:
     """Crawl a URL and combine the live page with its stored gold standard entry.

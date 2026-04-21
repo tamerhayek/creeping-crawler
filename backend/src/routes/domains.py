@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from ..schemas import DomainsResponse
-from ..lib.urls import get_domains
+from ..lib import get_domains
 
 router = APIRouter()
 

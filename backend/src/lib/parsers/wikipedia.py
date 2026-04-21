@@ -16,7 +16,6 @@ from urllib.parse import urlparse
 
 from .base import ContentParser
 
-
 @dataclass(frozen=True)
 class WikipediaSectionProfile:
     """Per-page section filter for WikipediaParser.
@@ -29,7 +28,6 @@ class WikipediaSectionProfile:
 
     allowed_headings: frozenset[str]
     break_on_unknown_heading: bool = True
-
 
 class WikipediaParser(ContentParser):
     """Parser for en.wikipedia.org and it.wikipedia.org pages.
