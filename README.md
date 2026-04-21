@@ -1,0 +1,62 @@
+# Crawl4AI Evaluation Framework
+
+A Python tool that evaluates content extraction quality from web pages. It crawls URLs with Crawl4AI, parses the resulting markdown with URL-specific parsers, and scores extraction quality against gold standard samples using precision, recall, and F1.
+
+## Requirements
+
+- [Conda](https://docs.conda.io/en/latest/)
+- Python 3.11
+
+## Setup
+
+```bash
+make envs
+```
+
+This creates two conda environments (`crawl4ai-backend` and `crawl4ai-frontend`) and installs all dependencies.
+
+## Running
+
+**With Docker Compose (recommended):**
+```bash
+docker compose up --build
+```
+
+**Without Docker (two terminals):**
+```bash
+make run-backend    # http://localhost:8003
+make run-frontend   # http://localhost:8004
+```
+
+## Development
+
+```bash
+make freeze         # Update requirements.txt files from current envs
+make delete-envs    # Remove conda environments
+```
+
+**Running tests:**
+```bash
+conda activate crawl4ai-backend
+cd backend
+pytest -v
+```
+
+## REST API
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/parse?url=` | Crawl + parse a URL |
+| GET | `/domains` | List supported domains |
+| GET | `/gold_standard?url=` | Gold standard entry for a URL |
+| GET | `/full_gold_standard?domain=` | All GS entries for a domain |
+| POST | `/evaluate` | Score `{parsed_text, gold_text}` |
+| GET | `/gs_urls` | List all gold standard URLs |
+| GET | `/gold_text?url=` | Gold standard text (no crawl) |
+| GET | `/full_gs_eval?domain=` | Averaged scores across all GS entries for a domain |
+
+Errors: `400` unsupported domain · `404` URL not in GS · `503` unreachable URL.
+
+## Supported domains
+
+Gold standard data lives in `gs_data/`. A domain is supported when it has a corresponding `<domain>_gs.json` file there. Currently supported: English Wikipedia, Italian Wikipedia, CNBC, XE.

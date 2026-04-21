@@ -16,8 +16,8 @@ def _gs_data_dir() -> Path:
     docker_path = Path("/gs_data")
     if docker_path.exists():
         return docker_path
-    # backend/src/lib/ → backend/src/ → backend/ → project root
-    return Path(__file__).resolve().parents[3] / "gs_data"
+    # gold_standard/ → lib/ → src/ → backend/ → project root
+    return Path(__file__).resolve().parents[4] / "gs_data"
 
 
 def get_all_entries() -> list[dict]:

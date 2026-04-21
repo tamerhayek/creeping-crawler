@@ -74,7 +74,7 @@
       <span class="fw-semibold">Raw Text</span>
       <span class="text-muted small">{{ data.html_text.split()|length }} words</span>
     </div>
-    <div class="text-panel">{{ data.html_text }}</div>
+    <div class="text-panel"><pre class="mb-0">{{ data.html_text | e }}</pre></div>
   </div>
 
   <div class="{{ col_class }}">
