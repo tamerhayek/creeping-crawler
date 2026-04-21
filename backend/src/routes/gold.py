@@ -8,7 +8,7 @@ from ..lib.services import assert_supported_domain, build_gold_entry, domain_of
 from ..lib.urls import get_available_urls, get_urls_for_domain
 from ..schemas import (
     FullGoldStandardResponse,
-    GoldStandardResponse,
+    GoldStandardEntry,
     GoldTextResponse,
     GsUrlsResponse,
 )
@@ -16,7 +16,7 @@ from ..schemas import (
 router = APIRouter()
 
 
-@router.get("/gold_standard", response_model=GoldStandardResponse)
+@router.get("/gold_standard", response_model=GoldStandardEntry)
 async def gold_standard(url: str = Query(...)):
     domain = domain_of(url)
     assert_supported_domain(domain)
@@ -30,7 +30,7 @@ async def gold_standard(url: str = Query(...)):
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    return GoldStandardResponse(
+    return GoldStandardEntry(
         url=url,
         domain=domain,
         title=page.title,
