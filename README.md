@@ -11,10 +11,13 @@ A tool for evaluating content extraction quality from web pages. It crawls URLs 
 
 ## Setup
 
-Requires [Pixi](https://pixi.sh) for environment management.
+Requires [Conda](https://docs.conda.io) for environment management.
 
 ```bash
-pixi install
+conda create -n crawl4ai-backend python=3.11 -y
+conda activate crawl4ai-backend
+pip install -r requirements.txt
+python -m playwright install --with-deps chromium
 ```
 
 ## Usage
@@ -101,6 +104,7 @@ print(f"F1: {result.metrics.f1:.4f}")
 ## Testing
 
 ```bash
+conda activate crawl4ai-backend
 pytest
 ```
 

@@ -1,11 +1,11 @@
-FROM ghcr.io/prefix-dev/pixi:0.46.0-jammy
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY pixi.toml pixi.lock ./
-RUN pixi install --locked
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
 EXPOSE 8004
-CMD ["pixi", "run", "app"]
+CMD ["python", "app.py"]

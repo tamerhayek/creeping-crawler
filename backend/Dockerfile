@@ -1,13 +1,13 @@
-FROM ghcr.io/prefix-dev/pixi:0.46.0-jammy
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY pixi.toml pixi.lock ./
-RUN pixi install --locked
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN pixi run install-browsers
+RUN python -m playwright install --with-deps chromium
 
 EXPOSE 8003
-CMD ["pixi", "run", "python", "main.py", "serve", "--host", "0.0.0.0"]
+CMD ["python", "main.py", "serve", "--host", "0.0.0.0"]

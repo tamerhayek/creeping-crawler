@@ -6,8 +6,8 @@ Crawl4AI Evaluation Framework — a Python tool that evaluates content extractio
 
 ## Tech stack
 
-- Python 3.11 (>=3.11, <3.12)
-- Pixi for environment/dependency management
+- Python 3.11
+- Conda for environment management + pip for packages
 - Click for CLI
 - Crawl4AI 0.8.x + Playwright for web crawling
 - FastAPI + Uvicorn for the REST API
@@ -16,8 +16,18 @@ Crawl4AI Evaluation Framework — a Python tool that evaluates content extractio
 ## Setup
 
 ```bash
-cd backend && pixi install
-cd frontend && pixi install
+# Backend
+cd backend
+conda create -n crawl4ai-backend python=3.11 -y
+conda activate crawl4ai-backend
+pip install -r requirements.txt
+python -m playwright install --with-deps chromium
+
+# Frontend
+cd frontend
+conda create -n crawl4ai-frontend python=3.11 -y
+conda activate crawl4ai-frontend
+pip install -r requirements.txt
 ```
 
 ## Running
@@ -30,10 +40,10 @@ docker compose up --build
 Without Docker:
 ```bash
 # Terminal 1 — backend API (port 8003)
-cd backend && pixi run app
+conda activate crawl4ai-backend && python main.py serve
 
 # Terminal 2 — frontend UI (port 8004)
-cd frontend && pixi run app
+conda activate crawl4ai-frontend && python app.py
 ```
 
 Backend CLI commands:
@@ -48,9 +58,10 @@ python main.py serve --host 0.0.0.0 --port 8080
 ## Testing
 
 ```bash
+conda activate crawl4ai-backend
 cd backend
-pytest                # Run all tests
-pytest -v             # Verbose
+pytest        # Run all tests
+pytest -v     # Verbose
 ```
 
 ## Project structure
@@ -58,7 +69,7 @@ pytest -v             # Verbose
 ```
 backend/              — Backend (Python, FastAPI, Crawl4AI)
   main.py             — CLI entry point (Click commands: list-urls, run, serve)
-  pixi.toml           — Backend dependencies
+  requirements.txt    — Backend dependencies
   crawl_eval/         — Main package
     api.py            — FastAPI app creation + router registration
     schemas.py        — Pydantic request/response models
@@ -83,7 +94,7 @@ backend/              — Backend (Python, FastAPI, Crawl4AI)
   tests/              — Pytest test suite
 frontend/             — Frontend (Flask + Jinja2, port 8004)
   app.py              — Flask app (proxies to backend API)
-  pixi.toml           — Frontend dependencies (flask, requests)
+  requirements.txt    — Frontend dependencies (flask, requests)
   templates/
     base.html.jinja   — Bootstrap 5 base layout
     index.html.jinja  — URL input form + GS dropdown
