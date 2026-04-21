@@ -1,0 +1,8 @@
+URL: https://www.cnbc.com/articolo
+TITLE: Titolo dell'articolo
+HTML:
+<html>...tutto l'html grezzo...</html>
+GOLD:
+Testo informativo dell'articolo
+su più righe, scrivi liberamente
+fino alla fine del file
