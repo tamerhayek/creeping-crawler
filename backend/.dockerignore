@@ -1,5 +1,26 @@
-.pixi/
+# Git
+.git/
+.gitignore
+
+# Python
 __pycache__/
+**/__pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Test e dev
+tests/
 .pytest_cache/
+requirements-dev.txt
+
+# Docker stesso
 Dockerfile
+.dockerignore
+
+# Env e IDE
+.env
+.venv/
+.pixi/
+.idea/
+.vscode/

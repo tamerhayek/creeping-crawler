@@ -5,9 +5,9 @@ from fastapi import HTTPException
 from .crawler import fetch_page
 from .gold import gold_sample_path_for_url, load_sample_text
 from .metrics import calculate_metrics
-from .schemas import GoldStandardEntry, TokenLevelEval
 from .tokens import extract_unique_tokens, strip_markdown
 from .urls import is_supported_domain
+from ..schemas import GoldStandardEntry, TokenLevelEval
 
 
 def domain_of(url: str) -> str:

@@ -6,8 +6,8 @@ class TokenMetrics:
     extracted_count: int
     sample_count: int
     intersection_count: int
-    recall: float
     precision: float
+    recall: float
     f1: float
 
 
@@ -28,7 +28,7 @@ def calculate_metrics(extracted_tokens: set[str], sample_tokens: set[str]) -> To
         extracted_count=extracted_count,
         sample_count=sample_count,
         intersection_count=intersection_count,
-        recall=recall,
         precision=precision,
+        recall=recall,
         f1=f1,
     )

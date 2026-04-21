@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query
 
-from ..crawler import fetch_page
-from ..parsers import get_parser_for_url
+from ..lib.crawler import fetch_page
+from ..lib.parsers import get_parser_for_url
 from ..schemas import ParseResponse
-from ..services import assert_supported_domain, domain_of
+from ..lib.services import assert_supported_domain, domain_of
 
 router = APIRouter()
 

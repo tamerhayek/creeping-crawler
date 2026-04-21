@@ -2,12 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Layer 1: dipendenze pip — invalidata solo se requirements.txt cambia
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-
+# Layer 2: browser Playwright — pesante (~300MB), cache separata da pip
 RUN python -m playwright install --with-deps chromium
 
+# Layer 3: sorgenti — invalidata ad ogni modifica del codice
+COPY . .
+
 EXPOSE 8003
-CMD ["python", "main.py", "serve", "--host", "0.0.0.0"]
+CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8003"]
