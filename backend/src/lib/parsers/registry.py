@@ -12,11 +12,13 @@ from .default import PassThroughParser
 from .wikipedia import WikipediaParser
 from .cnbc import CnbcParser
 from .espn import EspnParser
+from .xe import XeParser
 
 DOMAIN_CONFIGS: dict[str, ContentParser] = {
     "it.wikipedia.org": WikipediaParser(),
-    "espn.com": EspnParser(),
+    "www.espn.com": EspnParser(),
     "www.cnbc.com": CnbcParser(),
+    "www.xe.com": XeParser(),
 }
 
 def get_parser_for_url(url: str) -> ContentParser:

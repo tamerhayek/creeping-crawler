@@ -82,7 +82,7 @@
       <span class="fw-semibold">Parsed Text</span>
       <span class="text-muted small">{{ data.parsed_text.split()|length }} words</span>
     </div>
-    <div class="text-panel">{{ data.parsed_text }}</div>
+    <div class="text-panel"><pre class="mb-0">{{ data.parsed_text | e }}</pre></div>
   </div>
 
   {% if has_gs %}
@@ -91,7 +91,7 @@
       <span class="fw-semibold">Gold Standard</span>
       <span class="text-muted small">{{ data.gold_text.split()|length }} words</span>
     </div>
-    <div class="text-panel">{{ data.gold_text }}</div>
+    <div class="text-panel"><pre class="mb-0">{{ data.gold_text | e }}</pre></div>
   </div>
   {% endif %}
 

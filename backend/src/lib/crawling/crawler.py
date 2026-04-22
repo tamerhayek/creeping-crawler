@@ -36,14 +36,26 @@ DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
         ),
         remove_forms=True,
     ),
-    "espn.com": CrawlerRunConfig(
+    "www.espn.com": CrawlerRunConfig(
         magic=True,
         excluded_tags=["style", "script", "link", "meta"],
         remove_forms=True,
     ),
     "www.xe.com": CrawlerRunConfig(
         magic=True,
+        css_selector="article, .blog-content, main",
         excluded_tags=["style", "script", "link", "meta"],
+        excluded_selector=(
+            "table, "
+            "nav, header, footer, "
+            "a[href*='signup'], a[href*='register'], "
+            ".breadcrumb, "
+            "[class*='tag'], [class*='Tag'], "
+            "[class*='related'], [class*='Related'], "
+            "[class*='cta'], [class*='banner'], "
+            "[class*='footnote'], [class*='citation'], "
+            "hr ~ *"
+        ),
         remove_forms=True,
     ),
     "www.cnbc.com": CrawlerRunConfig(
