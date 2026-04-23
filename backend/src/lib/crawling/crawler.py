@@ -15,10 +15,10 @@ from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
 
 @dataclass
 class PageContent:
-    """Holds the result of a crawl: page title and raw markdown text."""
+    """Holds the result of a crawl: page title and raw HTML."""
 
     title: str
-    html_text: str  # raw markdown produced by Crawl4AI — input to the parser
+    html_text: str  # raw HTML from Crawl4AI — input to the parser
 
 
 # Registry of domain-specific crawl configurations.
@@ -27,8 +27,7 @@ class PageContent:
 DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
     "it.wikipedia.org": CrawlerRunConfig(
         magic=True,
-        css_selector=".mw-parser-output > p, .mw-parser-output > section",
-        excluded_tags=["style", "script", "link", "meta"],
+        excluded_tags=["style", "script", "link"],
         excluded_selector=(
             "table.infobox, .shortdescription, .hatnote, .toc, "
             ".navbox, .vertical-navbox, .metadata, .mw-editsection, "
@@ -38,13 +37,12 @@ DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
     ),
     "www.espn.com": CrawlerRunConfig(
         magic=True,
-        excluded_tags=["style", "script", "link", "meta"],
+        excluded_tags=["style", "script", "link"],
         remove_forms=True,
     ),
     "www.xe.com": CrawlerRunConfig(
         magic=True,
-        css_selector="article, .blog-content, main",
-        excluded_tags=["style", "script", "link", "meta"],
+        excluded_tags=["style", "script", "link"],
         excluded_selector=(
             "table, "
             "nav, header, footer, "
@@ -60,7 +58,7 @@ DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
     ),
     "www.cnbc.com": CrawlerRunConfig(
         magic=True,
-        excluded_tags=["style", "script", "link", "meta"],
+        excluded_tags=["style", "script", "link"],
         remove_forms=True,
     ),
 }
@@ -78,7 +76,7 @@ def _run_config_for(url: str) -> CrawlerRunConfig:
 
 
 async def fetch_page(url: str) -> PageContent:
-    """Crawl a URL and return its title and raw markdown.
+    """Crawl a URL and return its title and raw HTML.
 
     Raises:
         RuntimeError: if the crawl fails or the URL is unreachable.
@@ -95,3 +93,28 @@ async def fetch_page(url: str) -> PageContent:
     title = (result.metadata or {}).get("title", "")
     html_text = result.html or ""
     return PageContent(title=title, html_text=html_text)
+
+
+async def fetch_page_from_html(url: str, html_text: str) -> PageContent:
+    """Process a raw HTML string through Crawl4AI using the domain config for url.
+
+    Uses the ``raw:`` prefix so Crawl4AI applies the same CSS selectors and
+    exclusion rules as a real crawl, without fetching anything from the network.
+
+    Raises:
+        RuntimeError: if Crawl4AI fails to process the HTML.
+    """
+    try:
+        async with AsyncWebCrawler() as crawler:
+            result = await crawler.arun(
+                url=f"raw:{html_text}",
+                config=_run_config_for(url),
+            )
+    except Exception as e:
+        raise RuntimeError(f"HTML processing failed: {e}")
+
+    if not result.success:
+        raise RuntimeError(f"HTML processing failed: {result.error_message}")
+
+    title = (result.metadata or {}).get("title", "")
+    return PageContent(title=title, html_text=result.html or "")

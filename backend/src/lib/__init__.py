@@ -10,7 +10,7 @@ Routes should import exclusively from this package (e.g. `from ..lib import fetc
 rather than from individual submodules, so internal restructuring does not affect routes.
 """
 
-from .crawling.crawler import fetch_page, PageContent
+from .crawling.crawler import fetch_page, fetch_page_from_html, PageContent
 from .evaluation.metrics import TokenMetrics, calculate_metrics
 from .evaluation.tokens import extract_unique_tokens, strip_markdown
 from .gold_standard.gold import get_entry_for_url, load_gold_text, load_gold_tokens
