@@ -17,6 +17,15 @@ env-frontend:
 
 envs: env-backend env-frontend
 
+install-backend:
+	$(CONDA) run -n crawl4ai-backend pip install -r backend/requirements.txt
+	$(CONDA) run -n crawl4ai-backend python -m playwright install --with-deps chromium
+
+install-frontend:
+	$(CONDA) run -n crawl4ai-frontend pip install -r frontend/requirements.txt
+
+install: install-backend install-frontend
+
 delete-backend:
 	$(CONDA) remove -n crawl4ai-backend --all -y
 

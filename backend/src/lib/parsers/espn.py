@@ -34,16 +34,18 @@ class EspnParser(ContentParser):
     _HEADING_TAGS = {"h1", "h2", "h3", "h4"}
     _CONTENT_TAGS = {"p"}
 
+    _HEADING_PREFIX = {"h1": "#", "h2": "##", "h3": "###", "h4": "####"}
+
     def parse(self, url: str, html: str) -> str:
-        """Extract clean article text from raw ESPN HTML.
+        """Extract article content from raw ESPN HTML as markdown.
 
         Args:
             url:  source URL (unused, kept for interface compatibility).
             html: raw HTML string from Crawl4AI.
 
         Returns:
-            Plain text with paragraphs separated by blank lines.
-            Empty string if nothing could be extracted.
+            Markdown text with headings prefixed by #, paragraphs separated
+            by blank lines. Empty string if nothing could be extracted.
         """
         soup = BeautifulSoup(html, "html.parser")
 
@@ -65,7 +67,12 @@ class EspnParser(ContentParser):
             if not isinstance(element, Tag):
                 continue
             text = element.get_text(separator=" ", strip=True)
-            if text:
+            if not text:
+                continue
+            if element.name in self._HEADING_TAGS:
+                prefix = self._HEADING_PREFIX[element.name]
+                collected.append(f"{prefix} {text}")
+            else:
                 collected.append(text)
 
         return "\n\n".join(collected)

@@ -42,16 +42,19 @@ class WikipediaParser(ContentParser):
     _HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
     _CONTENT_TAGS = {"p", "li"}
 
+    _HEADING_PREFIX = {"h1": "#", "h2": "##", "h3": "###",
+                       "h4": "####", "h5": "#####", "h6": "######"}
+
     def parse(self, url: str, html: str) -> str:
-        """Extract clean article text from raw Wikipedia HTML.
+        """Extract article content from raw Wikipedia HTML as markdown.
 
         Args:
             url:  source URL (unused, kept for interface compatibility).
             html: raw HTML string from Crawl4AI.
 
         Returns:
-            Plain text with one paragraph/item per line, sections separated
-            by blank lines. Empty string if nothing could be extracted.
+            Markdown text with headings prefixed by #, paragraphs/list items
+            separated by blank lines. Empty string if nothing could be extracted.
         """
         soup = BeautifulSoup(html, "html.parser")
 
@@ -67,12 +70,13 @@ class WikipediaParser(ContentParser):
                 continue
 
             if element.name in self._HEADING_TAGS:
-                heading = self._extract_heading_text(element)
-                if not heading:
+                heading_text = self._extract_heading_text(element)
+                if not heading_text:
                     continue
-                if heading in self.EXCLUDED_SECTIONS:
+                if heading_text.lower() in self.EXCLUDED_SECTIONS:
                     break  # stop — everything after this is non-informative
-                collected.append(heading)
+                prefix = self._HEADING_PREFIX.get(element.name, "#")
+                collected.append(f"{prefix} {heading_text}")
 
             else:
                 text = element.get_text(separator=" ", strip=True)
@@ -82,9 +86,9 @@ class WikipediaParser(ContentParser):
         return "\n\n".join(collected)
 
     def _extract_heading_text(self, element: Tag) -> str:
-        """Return the normalised, lowercase heading text with edit links removed."""
+        """Return the heading text with edit links removed (original case preserved)."""
         # Remove [edit] / [modifica] spans that Wikipedia injects
         for edit_span in element.find_all("span", class_="mw-editsection"):
             edit_span.decompose()
 
-        return element.get_text(separator=" ", strip=True).lower()
+        return element.get_text(separator=" ", strip=True)
