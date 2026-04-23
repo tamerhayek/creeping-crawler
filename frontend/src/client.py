@@ -56,8 +56,10 @@ def get_gold_text(url: str) -> str | None:
         resp = requests.get(f"{BACKEND}/gold_text", params={"url": url}, timeout=5)
         if resp.status_code == 200:
             return resp.json()["gold_text"]
-        else:
+        elif resp.status_code == 404:
             return None
+        else:
+            raise Exception(f"Errore - Backend code: {resp.status_code} text: {resp.text}")
     except requests.exceptions.ConnectionError as e:
         raise BackendUnavailable() from e
     
