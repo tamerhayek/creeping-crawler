@@ -1,4 +1,4 @@
-"""ESPN-specific content parser (espn.com).
+"""ESPN-specific content parser (www.espn.com).
 
 Receives Crawl4AI markdown (filtered by CrawlerRunConfig) and removes
 boilerplate sections that may still appear after the article body.
