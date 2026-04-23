@@ -10,7 +10,7 @@
     {% if data.title %}
       <h5 class="mb-0">{{ data.title }}</h5>
     {% endif %}
-    <small class="text-muted text-break">{{ url }}</small>
+    <a href="{{ url }}" target="_blank" class="text-muted text-break">{{ url }}</a>
   </div>
 </div>
 
@@ -71,7 +71,7 @@
 
   <div class="col-md-6">
     <div class="panel-header">
-      <span class="fw-semibold">Raw Text</span>
+      <span class="fw-semibold">Raw HTML</span>
       <span class="text-muted small">{{ data.html_text.split()|length }} words</span>
     </div>
     <div class="text-panel"><pre class="mb-0">{{ data.html_text | e }}</pre></div>
@@ -79,7 +79,7 @@
 
   <div class="col-md-6">
     <div class="panel-header">
-      <span class="fw-semibold">Parsed Text</span>
+      <span class="fw-semibold">Parsed Markdown</span>
       <span class="text-muted small">{{ data.parsed_text.split()|length }} words</span>
     </div>
     <div class="text-panel"><pre class="mb-0">{{ data.parsed_text | e }}</pre></div>
