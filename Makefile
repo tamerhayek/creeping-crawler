@@ -1,4 +1,4 @@
-.PHONY: env-backend env-frontend envs delete-backend delete-frontend delete-envs tos freeze-backend freeze-frontend freeze run-backend run-frontend
+.PHONY: env-backend env-frontend envs install install-frontend install-backend delete-backend delete-frontend delete-envs tos freeze-backend freeze-frontend freeze run-backend run-frontend crawl
 
 CONDA ?= $(shell which conda)
 
@@ -47,3 +47,6 @@ run-backend:
 
 run-frontend:
 	cd frontend && $(CONDA) run --no-capture-output -n crawl4ai-frontend uvicorn src.app:app --host 0.0.0.0 --port 8004
+
+crawl:
+	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend python crawl_gs.py
