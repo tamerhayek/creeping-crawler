@@ -5,6 +5,7 @@ from ..schemas import ParseRequest, ParseResponse
 
 router = APIRouter()
 
+
 @router.get("/parse", response_model=ParseResponse)
 async def parse_get(url: str = Query(...)):
     domain = domain_of(url)
@@ -15,15 +16,8 @@ async def parse_get(url: str = Query(...)):
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    print(page)
-    print(url)
-    print(page.title)
-    print(page.html_text)
-
     parser = get_parser_for_url(url)
-    parsed_text = parser.parse(url, page.html_text)
-
-    print(parsed_text)
+    parsed_text = parser.parse(url, page.markdown_text)
 
     return ParseResponse(
         url=url,
@@ -45,12 +39,12 @@ async def parse_post(body: ParseRequest):
         raise HTTPException(status_code=503, detail=str(e))
 
     parser = get_parser_for_url(body.url)
-    parsed_text = parser.parse(body.url, page.html_text)
+    parsed_text = parser.parse(body.url, page.markdown_text)
 
     return ParseResponse(
         url=body.url,
         domain=domain,
         title=page.title,
-        html_text=page.html_text,
+        html_text=body.html_text,
         parsed_text=parsed_text,
     )
