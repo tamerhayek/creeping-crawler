@@ -1,0 +1,11 @@
+{% extends "base.html.jinja" %}
+
+{% block title %} — Errore{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 60vh;">
+  <h1 class="mb-3">Backend non disponibile</h1>
+  <p class="text-muted mb-4">Il server backend non è raggiungibile. Assicurati che sia in esecuzione sulla porta 8003.</p>
+  <button class="btn btn-primary" onclick="location.reload()">Ricarica la pagina</button>
+</div>
+{% endblock %}

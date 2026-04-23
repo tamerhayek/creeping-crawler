@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from ..client import evaluate, get_gold_text, get_gs_urls, parse_url
+from ..client import BackendUnavailable, evaluate, get_gold_text, get_gs_urls, parse_url
 from ..templates import templates
 
 
@@ -37,19 +37,22 @@ def compare(request: Request, url: str = ""):
     if not url:
         return RedirectResponse(url="/")
 
-    gs_urls = get_gs_urls()
-    data, error = parse_url(url)
+    try:
+        gs_urls = get_gs_urls()
+        data, error = parse_url(url)
 
-    if not error:
-        data["cleaned_text"] = strip_markdown(data.get("parsed_text", ""))
+        if not error:
+            data["cleaned_text"] = strip_markdown(data.get("parsed_text", ""))
 
-    if not error and url in gs_urls:
-        gold_text = get_gold_text(url)
-        if gold_text:
-            data["gold_text"] = gold_text
-            metrics = evaluate(data["cleaned_text"], gold_text)
-            if metrics:
-                data["metrics"] = metrics
+        if not error and url in gs_urls:
+            gold_text = get_gold_text(url)
+            if gold_text:
+                data["gold_text"] = gold_text
+                metrics = evaluate(data["cleaned_text"], gold_text)
+                if metrics:
+                    data["metrics"] = metrics
+    except BackendUnavailable:
+        return templates.TemplateResponse(request=request, name="error.html.jinja", status_code=503)
 
     return templates.TemplateResponse(
         request=request,
