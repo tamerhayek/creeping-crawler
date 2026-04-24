@@ -4,6 +4,7 @@ Tokens are defined as whitespace-separated words.
 This module is used for both gold standard loading and parser output evaluation.
 """
 
+import html as html_mod
 import re
 
 import mistune
@@ -47,4 +48,5 @@ def strip_markdown(text: str) -> str:
         tag.unwrap()
     text = re.sub(r'[ \t]+', ' ', str(soup))   # collapse horizontal whitespace
     text = re.sub(r'\n+', '\n', text)           # collapse multiple newlines
+    text = html_mod.unescape(text)              # decode &amp; → & etc.
     return text.strip()

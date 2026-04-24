@@ -1,5 +1,6 @@
 """Route for the comparison page (GET /compare)."""
 
+import html as html_mod
 import re
 
 import mistune
@@ -34,6 +35,7 @@ def strip_markdown(text: str) -> str:
         tag.unwrap()
     text = re.sub(r'[ \t]+', ' ', str(soup))
     text = re.sub(r'\n+', '\n', text)
+    text = html_mod.unescape(text)
     return text.strip()
 
 router = APIRouter()
