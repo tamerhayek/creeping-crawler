@@ -1,5 +1,6 @@
 """
-Crawl all URLs from gs_data and save results to gs_results/.
+Crawl all URLs from gs_data using the domain configs in src/lib/crawling/configs/
+and save results to gs_results/.
 
 Run from the project root:
     make crawl
@@ -10,24 +11,27 @@ Output structure:
     cleaned_html/   <- result.cleaned_html, multiline, .html
     markdown/       <- result.markdown, multiline, .md
 
-Files are named after the URL and overwritten on each run, e.g.:
-  it.wikipedia.org__wiki__BabelNet.txt
+Files are overwritten on each run.
 """
 
 import asyncio
 import json
 import re
+import sys
 from pathlib import Path
 
-from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
+# Allow importing from src/ without installing the package
+sys.path.insert(0, str(Path(__file__).parent))
+
+from crawl4ai import AsyncWebCrawler
+
+from src.lib.crawling.configs.registry import config_for
 
 GS_DIR      = Path(__file__).parent.parent / "gs_data"
 OUT_DIR     = Path(__file__).parent.parent / "gs_results"
 HTML_DIR    = OUT_DIR / "html"
 CLEANED_DIR = OUT_DIR / "cleaned_html"
 MD_DIR      = OUT_DIR / "markdown"
-
-CONFIG = CrawlerRunConfig(magic=True)
 
 
 def url_to_slug(url: str) -> str:
@@ -54,7 +58,7 @@ async def crawl_all(urls: list[str]):
         for url in urls:
             print(f"Crawling: {url}")
             try:
-                result = await crawler.arun(url=url, config=CONFIG)
+                result = await crawler.arun(url=url, config=config_for(url))
             except Exception as e:
                 print(f"  ERROR: {e}")
                 continue
