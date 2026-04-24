@@ -1,3 +1,5 @@
+"""Route handlers for GET /parse and POST /parse."""
+
 from fastapi import APIRouter, HTTPException, Query
 
 from ..lib import assert_supported_domain, domain_of, fetch_page, fetch_page_from_html, get_parser_for_url
@@ -8,6 +10,7 @@ router = APIRouter()
 
 @router.get("/parse", response_model=ParseResponse)
 async def parse_get(url: str = Query(...)):
+    """Crawl a URL, apply the domain parser, and return the parsed text."""
     domain = domain_of(url)
     assert_supported_domain(domain)
 
@@ -30,6 +33,7 @@ async def parse_get(url: str = Query(...)):
 
 @router.post("/parse", response_model=ParseResponse)
 async def parse_post(body: ParseRequest):
+    """Process a provided HTML string, apply the domain parser, and return the parsed text."""
     domain = domain_of(body.url)
     assert_supported_domain(domain)
 

@@ -31,15 +31,9 @@ make run-frontend   # http://localhost:8004
 ## Development
 
 ```bash
-make freeze         # Update requirements.txt files from current envs
+make freeze         # Snapshot requirements.txt files from current envs
+make crawl          # Crawl all gold standard URLs and save results to gs_results/
 make delete-envs    # Remove conda environments
-```
-
-**Running tests:**
-```bash
-conda activate crawl4ai-backend
-cd backend
-pytest -v
 ```
 
 ## REST API
@@ -47,6 +41,7 @@ pytest -v
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/parse?url=` | Crawl + parse a URL |
+| POST | `/parse` | Parse provided `{url, html_text}` without crawling |
 | GET | `/domains` | List supported domains |
 | GET | `/gold_standard?url=` | Gold standard entry for a URL |
 | GET | `/full_gold_standard?domain=` | All GS entries for a domain |
@@ -60,3 +55,31 @@ Errors: `400` unsupported domain · `404` URL not in GS · `503` unreachable URL
 ## Supported domains
 
 Gold standard data lives in `gs_data/`. A domain is supported when it has a corresponding `<domain>_gs.json` file there. Currently supported: English Wikipedia, Italian Wikipedia, CNBC, XE.
+
+---
+
+## Grader — Lab Exam 1
+
+Computer Engineering Laboratory — A.Y. 2025/2026
+
+Download the grader image from Classroom, then follow the steps below.
+
+### Instructions
+
+1. Load the grader Docker image:
+
+    ```bash
+    docker load -i lab-grader-esonero.tar.gz
+    ```
+
+2. Start your project:
+
+    ```bash
+    docker compose up --build -d
+    ```
+
+3. Run the grader with your student ID:
+
+    ```bash
+    docker run --network host lab-grader-esonero-1:1.0.1 <your_student_id>
+    ```

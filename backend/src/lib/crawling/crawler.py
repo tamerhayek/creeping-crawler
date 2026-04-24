@@ -1,16 +1,27 @@
+"""Web crawling via Crawl4AI.
+
+Fetches a page by URL (or from raw HTML) and returns a PageContent with
+the page title, raw HTML, and converted markdown.
+"""
+
 import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
+
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
+
 
 @dataclass
 class PageContent:
-    title: str
-    html_text: str
-    markdown_text: str
+    """Result returned by the crawler for a single page."""
 
-# --- Domain-specific configs ---
-# Add an entry here to customize crawling for a domain.
+    title: str
+    html_text: str       # raw HTML of the page
+    markdown_text: str   # markdown converted from the raw HTML
+
+
+# Domain-specific crawler configs.
+# Add an entry here to customise crawling behaviour for a domain.
 # Domains not listed fall back to _DEFAULT_CONFIG.
 DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
     "it.wikipedia.org": CrawlerRunConfig(
@@ -49,17 +60,27 @@ DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
 
 _DEFAULT_CONFIG = CrawlerRunConfig(magic=True)
 
+
 def _config_for(url: str) -> CrawlerRunConfig:
+    """Return the crawler config for the given URL's domain."""
     return DOMAIN_CONFIGS.get(urlparse(url).netloc.lower(), _DEFAULT_CONFIG)
 
+
 def _title(html: str, metadata: dict) -> str:
+    """Extract the page title from Crawl4AI metadata or the raw HTML <title> tag."""
     title = (metadata or {}).get("title", "")
     if not title:
         m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
         title = m.group(1).strip() if m else ""
     return title
 
+
 async def fetch_page(url: str) -> PageContent:
+    """Crawl a URL and return its title, raw HTML, and markdown.
+
+    Raises:
+        RuntimeError: if Crawl4AI reports a failed crawl.
+    """
     async with AsyncWebCrawler() as crawler:
         result = await crawler.arun(url=url, config=_config_for(url))
 
@@ -72,7 +93,15 @@ async def fetch_page(url: str) -> PageContent:
         markdown_text=result.markdown,
     )
 
+
 async def fetch_page_from_html(url: str, html_text: str) -> PageContent:
+    """Process a raw HTML string through Crawl4AI as if it were fetched from url.
+
+    Uses Crawl4AI's raw: scheme so the domain-specific config still applies.
+
+    Raises:
+        RuntimeError: if Crawl4AI fails to process the HTML.
+    """
     async with AsyncWebCrawler() as crawler:
         result = await crawler.arun(url=f"raw:{html_text}", config=_config_for(url))
 
