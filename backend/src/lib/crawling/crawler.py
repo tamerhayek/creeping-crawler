@@ -78,6 +78,8 @@ DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
             # Inline video embeds
             "[class*='InlineVideo'], "
             "[class*='PlaceHolder-wrapper'], "
+            # Inline image embeds
+            "[class*='InlineImage-imageEmbed'], "
             # Stock ticker / related quotes widget and inline ticker buttons
             ".RelatedQuotes-relatedQuotes, "
             "[class*='QuoteInBody-inlineButton'], "
