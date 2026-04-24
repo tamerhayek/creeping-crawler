@@ -1,17 +1,17 @@
 """
-Crawl all URLs from gs_data and save result.html / result.cleaned_html to temp/.
+Crawl all URLs from gs_data and save results to gs_results/.
 
-Run from the backend/ directory:
-    conda activate crawl4ai-backend
-    python crawl_gs.py
+Run from the project root:
+    make crawl
 
 Output structure:
-  ../temp/
-    html/           <- result.html, single line, saved as .html
-    cleaned_html/   <- result.cleaned_html, pretty, saved as .html
+  ../gs_results/
+    html/           <- result.html, single line in quotes, .txt (JSON-ready)
+    cleaned_html/   <- result.cleaned_html, multiline, .html
+    markdown/       <- result.markdown, multiline, .md
 
-Files are named after the URL, e.g.:
-  it.wikipedia.org__wiki__BabelNet.html
+Files are named after the URL and overwritten on each run, e.g.:
+  it.wikipedia.org__wiki__BabelNet.txt
 """
 
 import asyncio
@@ -21,19 +21,20 @@ from pathlib import Path
 
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
 
-GS_DIR = Path(__file__).parent.parent / "gs_data"
-TMP_DIR = Path(__file__).parent.parent / "temp"
-HTML_DIR = TMP_DIR / "html"
-CLEANED_DIR = TMP_DIR / "cleaned_html"
+GS_DIR      = Path(__file__).parent.parent / "gs_data"
+OUT_DIR     = Path(__file__).parent.parent / "gs_results"
+HTML_DIR    = OUT_DIR / "html"
+CLEANED_DIR = OUT_DIR / "cleaned_html"
+MD_DIR      = OUT_DIR / "markdown"
 
 CONFIG = CrawlerRunConfig(magic=True)
 
 
-def url_to_filename(url: str) -> str:
+def url_to_slug(url: str) -> str:
     url = re.sub(r"https?://", "", url)
     url = re.sub(r"[/\?=&]", "__", url)
     url = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", url)
-    return url + ".html"
+    return url
 
 
 def collect_urls() -> list[str]:
@@ -46,8 +47,8 @@ def collect_urls() -> list[str]:
 
 
 async def crawl_all(urls: list[str]):
-    HTML_DIR.mkdir(parents=True, exist_ok=True)
-    CLEANED_DIR.mkdir(parents=True, exist_ok=True)
+    for d in (HTML_DIR, CLEANED_DIR, MD_DIR):
+        d.mkdir(parents=True, exist_ok=True)
 
     async with AsyncWebCrawler() as crawler:
         for url in urls:
@@ -62,18 +63,24 @@ async def crawl_all(urls: list[str]):
                 print(f"  FAILED: {result.error_message}")
                 continue
 
-            filename = url_to_filename(url)
+            slug = url_to_slug(url)
 
-            # result.html — single line, wrapped in quotes with escaped inner quotes
-            # ready to copy-paste as a JSON string value
+            # HTML — single line, inner quotes escaped, wrapped in "" for JSON
             raw = (result.html or "").replace("\n", "").replace("\r", "").replace('"', '\\"')
-            (HTML_DIR / filename.replace(".html", ".txt")).write_text(f'"{raw}"', encoding="utf-8")
+            (HTML_DIR / f"{slug}.txt").write_text(f'"{raw}"', encoding="utf-8")
 
-            # result.cleaned_html — pretty (multiline)
-            (CLEANED_DIR / filename).write_text(result.cleaned_html or "", encoding="utf-8")
+            # Cleaned HTML — multiline
+            (CLEANED_DIR / f"{slug}.html").write_text(result.cleaned_html or "", encoding="utf-8")
 
-            print(f"  -> temp/html/{filename.replace('.html', '.txt')}")
-            print(f"  -> temp/cleaned_html/{filename}")
+            # Markdown — multiline
+            md = result.markdown
+            if hasattr(md, "raw_markdown"):
+                md = md.raw_markdown or ""
+            (MD_DIR / f"{slug}.md").write_text(md or "", encoding="utf-8")
+
+            print(f"  -> gs_results/html/{slug}.txt")
+            print(f"  -> gs_results/cleaned_html/{slug}.html")
+            print(f"  -> gs_results/markdown/{slug}.md")
 
 
 if __name__ == "__main__":

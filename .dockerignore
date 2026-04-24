@@ -1,0 +1,4 @@
+__pycache__
+.DS_Store
+gs_results/
+backend/crawl_gs.py
