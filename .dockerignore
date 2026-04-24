@@ -1,4 +1,45 @@
-__pycache__
+# Git
+.git/
+.gitignore
+.github/
+
+# Python bytecode
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual envs / package managers
+.venv/
+.pixi/
+**/.conda/
+
+# Testing
+**/tests/
+**/.pytest_cache/
+
+# IDE / OS
+.idea/
+.vscode/
 .DS_Store
+**/.DS_Store
+*.swp
+*.swo
+
+# Docker files (non servono nel contesto)
+**/Dockerfile
+**/.dockerignore
+docker-compose*.yml
+
+# Dev artifacts
 gs_results/
+*.log
+*.tmp
+
+# Script di crawling (non va in produzione)
 backend/crawl_gs.py
+
+# Documentazione e tooling locale
+*.md
+Makefile
