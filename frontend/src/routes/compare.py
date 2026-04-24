@@ -11,8 +11,23 @@ from ..client import BackendUnavailable, evaluate, get_gold_text, get_gs_urls, p
 from ..templates import templates
 
 
+_QUOTE_TABLE = str.maketrans({
+    '\u2018': "'",   # left single quotation mark
+    '\u2019': "'",   # right single quotation mark / apostrophe
+    '\u201c': '"',   # left double quotation mark
+    '\u201d': '"',   # right double quotation mark
+    '\u2013': '-',   # en dash
+    '\u2014': '-',   # em dash
+})
+
+
 def strip_markdown(text: str) -> str:
-    """Convert markdown to plain text using mistune + BeautifulSoup."""
+    """Convert markdown to plain text using mistune + BeautifulSoup.
+
+    Normalises unicode typographic quotes and dashes to ASCII equivalents
+    so the diff view is not polluted by quote-style differences.
+    """
+    text = text.translate(_QUOTE_TABLE)
     html = mistune.html(text)
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup.find_all(True):
@@ -47,7 +62,7 @@ def compare(request: Request, url: str = ""):
         if not error and url in gs_urls:
             gold_text = get_gold_text(url)
             if gold_text:
-                data["gold_text"] = gold_text
+                data["gold_text"] = gold_text.translate(_QUOTE_TABLE)
                 metrics = evaluate(data["cleaned_text"], gold_text)
                 if metrics:
                     data["metrics"] = metrics
