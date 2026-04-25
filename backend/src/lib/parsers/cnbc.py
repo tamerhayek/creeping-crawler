@@ -45,6 +45,8 @@ class CnbcParser(ContentParser):
         re.compile(r"^\s*\[[^\]]+\]\([^)]+\)\s*$"),
         # "Read more:" or "Read also:" intra-article promos
         re.compile(r"^read (more|also)\s*:", re.IGNORECASE),
+        # "WATCH: [link]" inline video promos (bold or plain)
+        re.compile(r"^\**\s*WATCH\s*:\**", re.IGNORECASE),
     )
 
     def parse(self, url: str, markdown: str) -> str:
