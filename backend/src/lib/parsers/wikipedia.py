@@ -27,20 +27,21 @@ class WikipediaParser(ContentParser):
     })
 
     _SKIP_PATTERNS: tuple[re.Pattern, ...] = (
-        # Coordinate lines e.g. "43°N 12°E" or "Coordinate: 41°54′N 12°29′E"
-        re.compile(r"coordinate[:\s]", re.IGNORECASE),
-        re.compile(r"\d+[°][^\n]{0,30}[NSEW]"),
-        # Bare edit-section links: "[modifica | modifica wikitesto]"
-        re.compile(r"\[modifica", re.IGNORECASE),
-        re.compile(r"\[edit\b", re.IGNORECASE),
         # Skip-navigation links: "[Vai al contenuto](...)", "[Salta a](...)"
         re.compile(r"^\[vai al\b", re.IGNORECASE),
         re.compile(r"^\[salta al?\b", re.IGNORECASE),
-        # Disambiguation notice lines
-        re.compile(r"^disambigua", re.IGNORECASE),
         # Lines that are only wiki-style image/file markup residues
         re.compile(r"^\s*!\["),
     )
+
+    # Footnote reference markers to strip inline: [1], [4], [12], [N 1], [N 2], etc.
+    # Limited to 1-3 digit numbers to avoid stripping year links like [1912].
+    _FOOTNOTE_RE = re.compile(r"\[(?:\d{1,3}|N\s*\d+)\]")
+
+    # Protocol-relative markdown links that Crawl4AI emits for internal Wikipedia
+    # links: [testo](//it.wikipedia.org/wiki/X "X") → keep only link text.
+    # \S* handles URLs with parentheses e.g. /wiki/Ontologia_(informatica).
+    _PROTO_REL_LINK_RE = re.compile(r'\[([^\]]*)\]\(//\S*(?:\s+"[^"]*")?\)')
 
     def parse(self, url: str, markdown: str) -> str:
         """Remove non-informative sections and boilerplate from Crawl4AI markdown."""
@@ -53,6 +54,13 @@ class WikipediaParser(ContentParser):
                     break
 
             if any(pat.search(line) for pat in self._SKIP_PATTERNS):
+                continue
+
+            line = self._PROTO_REL_LINK_RE.sub(r"\1", line)
+            line = self._FOOTNOTE_RE.sub("", line)
+
+            # Drop image residue that substitutions may have exposed.
+            if re.match(r"^\s*!\[", line):
                 continue
 
             collected.append(line)
