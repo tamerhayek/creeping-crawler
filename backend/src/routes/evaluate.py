@@ -40,7 +40,7 @@ async def full_gs_eval(domain: str = Query(...)):
         except RuntimeError as e:
             raise HTTPException(status_code=503, detail=str(e))
         parser = get_parser_for_url(url)
-        parsed_text = parser.parse(url, page.html_text)
+        parsed_text = parser.parse(url, page.markdown_text)
         return compute_token_eval(parsed_text, gold_text)
 
     evals = await asyncio.gather(*[_eval_url(url) for url in urls])
