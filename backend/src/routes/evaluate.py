@@ -6,22 +6,25 @@ from fastapi import APIRouter, HTTPException, Query
 
 from ..lib import (
     assert_supported_domain,
-    compute_token_eval,
+    compute_token_count_eval,
+    compute_token_level_eval,
     fetch_page_for_url,
     get_parser_for_url,
     get_urls_for_domain,
     load_gold_text,
 )
-from ..schemas import EvaluateRequest, EvaluateResponse, TokenLevelEval
+from ..schemas import EvaluateRequest, EvaluateResponse, TokenCountEval, TokenLevelEval
 
 router = APIRouter()
 
 
 @router.post("/evaluate", response_model=EvaluateResponse)
 def evaluate(body: EvaluateRequest):
-    """Compute token-level precision, recall, and F1 for a parsed/gold text pair."""
-    token_eval = compute_token_eval(body.parsed_text, body.gold_text)
-    return EvaluateResponse(token_level_eval=token_eval)
+    """Compute token-level and token-count evaluation metrics for a parsed/gold text pair."""
+    return EvaluateResponse(
+        token_level_eval=compute_token_level_eval(body.parsed_text, body.gold_text),
+        token_count_eval=compute_token_count_eval(body.parsed_text, body.gold_text),
+    )
 
 
 @router.get("/full_gs_eval", response_model=EvaluateResponse)
@@ -30,8 +33,7 @@ async def full_gs_eval(domain: str = Query(...)):
     assert_supported_domain(domain)
     urls = get_urls_for_domain(domain)
 
-    async def _eval_url(url: str) -> TokenLevelEval:
-        """Parse and evaluate a single URL against its gold text."""
+    async def _eval_url(url: str) -> tuple[TokenLevelEval, TokenCountEval]:
         gold_text = load_gold_text(url)
         if not gold_text:
             raise HTTPException(status_code=404, detail=f"No gold text for: {url}")
@@ -39,16 +41,23 @@ async def full_gs_eval(domain: str = Query(...)):
             page = await fetch_page_for_url(url)
         except RuntimeError as e:
             raise HTTPException(status_code=503, detail=str(e))
-        parser = get_parser_for_url(url)
-        parsed_text = parser.parse(url, page.markdown_text)
-        return compute_token_eval(parsed_text, gold_text)
+        parsed_text = get_parser_for_url(url).parse(url, page.markdown_text)
+        return (
+            compute_token_level_eval(parsed_text, gold_text),
+            compute_token_count_eval(parsed_text, gold_text),
+        )
 
-    evals = await asyncio.gather(*[_eval_url(url) for url in urls])
-    n = len(evals)
+    results = await asyncio.gather(*[_eval_url(url) for url in urls])
+    token_level_evals, token_count_evals = zip(*results)
+    n = len(results)
+
     return EvaluateResponse(
         token_level_eval=TokenLevelEval(
-            precision=sum(e.precision for e in evals) / n,
-            recall=sum(e.recall for e in evals) / n,
-            f1=sum(e.f1 for e in evals) / n,
-        )
+            precision=sum(e.precision for e in token_level_evals) / n,
+            recall=sum(e.recall for e in token_level_evals) / n,
+            f1=sum(e.f1 for e in token_level_evals) / n,
+        ),
+        token_count_eval=TokenCountEval(
+            cos_similarity=sum(e.cos_similarity for e in token_count_evals) / n,
+        ),
     )

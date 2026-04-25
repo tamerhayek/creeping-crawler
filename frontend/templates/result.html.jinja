@@ -25,9 +25,10 @@
 {# ── Metrics card ─────────────────────────────────────────────────────────── #}
 {% if data.metrics %}
 {% set metrics_info = {
-  'Precision': 'Of all tokens returned by the parser, the fraction that also appear in the Gold Standard.<br><br><code>Precision = |parsed ∩ gold| / |parsed|</code><br><br>High precision → few extra/wrong tokens.',
-  'Recall':    'Of all tokens in the Gold Standard, the fraction that were returned by the parser.<br><br><code>Recall = |parsed ∩ gold| / |gold|</code><br><br>High recall → few missing tokens.',
-  'F1 Score':  'Harmonic mean of Precision and Recall. Penalises extreme imbalances between the two.<br><br><code>F1 = 2 · (P · R) / (P + R)</code><br><br>Best overall single-number quality indicator.'
+  'Precision':          'Of all tokens returned by the parser, the fraction that also appear in the Gold Standard.<br><br><code>Precision = |parsed ∩ gold| / |parsed|</code><br><br>High precision → few extra/wrong tokens.',
+  'Recall':             'Of all tokens in the Gold Standard, the fraction that were returned by the parser.<br><br><code>Recall = |parsed ∩ gold| / |gold|</code><br><br>High recall → few missing tokens.',
+  'F1 Score':           'Harmonic mean of Precision and Recall. Penalises extreme imbalances between the two.<br><br><code>F1 = 2 · (P · R) / (P + R)</code><br><br>Best overall single-number quality indicator.',
+  'Cosine Similarity':  'Measures similarity using token <strong>frequency vectors</strong> — unlike Precision/Recall which only check presence/absence of tokens, this also accounts for how often each token appears.<br><br><code>cos(θ) = (A·B) / (|A|·|B|)</code><br><br>Complements F1: a text with the right words but wrong frequencies will score lower here.'
 } %}
 <div class="card mb-4 shadow-sm card-gs">
   <div class="card-header fw-semibold">
@@ -35,52 +36,61 @@
     <span class="text-muted fw-normal small">(vs Gold Standard)</span>
   </div>
   <div class="card-body">
-    <div class="row g-4">
-      {% for label, val in [
-          ('Precision', data.metrics.precision),
-          ('Recall',    data.metrics.recall),
-          ('F1 Score',  data.metrics.f1)
-      ] %}
-      <div class="col-md-4">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="fw-medium d-flex align-items-center gap-1">
-            {{ label }}
-            <button type="button"
-                    class="btn btn-link p-0 lh-1 text-muted metric-info"
-                    data-bs-toggle="popover"
-                    data-bs-trigger="hover focus"
-                    data-bs-placement="top"
-                    data-bs-html="true"
-                    data-bs-title="{{ label }}"
-                    data-bs-content="{{ metrics_info[label] }}"
-                    style="font-size: 0.75rem;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-              </svg>
-            </button>
-          </span>
-          <span class="badge fs-6
-            {% if val >= 0.7 %}bg-success
-            {% elif val >= 0.4 %}bg-warning text-dark
-            {% else %}bg-danger{% endif %}">
-            {{ "%.4f"|format(val) }}
-          </span>
-        </div>
-        <div class="progress" style="height: 10px;">
-          <div class="progress-bar
-            {% if val >= 0.7 %}bg-success
-            {% elif val >= 0.4 %}bg-warning
-            {% else %}bg-danger{% endif %}"
-            role="progressbar"
-            style="width: {{ (val * 100)|round(1) }}%"
-            aria-valuenow="{{ (val * 100)|round(1) }}"
-            aria-valuemin="0" aria-valuemax="100">
-          </div>
+
+    {# ── Macro: render a single metric row ── #}
+    {%- macro metric_col(label, val) %}
+    <div class="col-12 col-md-4">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="fw-medium d-flex align-items-center gap-1">
+          {{ label }}
+          <button type="button"
+                  class="btn btn-link p-0 lh-1 text-muted"
+                  data-bs-toggle="popover" data-bs-trigger="hover focus"
+                  data-bs-placement="top" data-bs-html="true"
+                  data-bs-title="{{ label }}"
+                  data-bs-content="{{ metrics_info[label] }}"
+                  style="font-size: 0.75rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+            </svg>
+          </button>
+        </span>
+        <span class="badge fs-6
+          {% if val >= 0.7 %}bg-success
+          {% elif val >= 0.4 %}bg-warning text-dark
+          {% else %}bg-danger{% endif %}">
+          {{ "%.4f"|format(val) }}
+        </span>
+      </div>
+      <div class="progress" style="height: 10px;">
+        <div class="progress-bar
+          {% if val >= 0.7 %}bg-success
+          {% elif val >= 0.4 %}bg-warning
+          {% else %}bg-danger{% endif %}"
+          role="progressbar"
+          style="width: {{ (val * 100)|round(1) }}%"
+          aria-valuenow="{{ (val * 100)|round(1) }}"
+          aria-valuemin="0" aria-valuemax="100">
         </div>
       </div>
-      {% endfor %}
     </div>
+    {%- endmacro %}
+
+    {# Token Level Eval #}
+    <p class="text-muted small fw-semibold mb-2 text-uppercase" style="letter-spacing:.05em;">Token Level Eval</p>
+    <div class="row g-3">
+      {{ metric_col('Precision', data.metrics.precision) }}
+      {{ metric_col('Recall',    data.metrics.recall) }}
+      {{ metric_col('F1 Score',  data.metrics.f1) }}
+    </div>
+
+    {# Token Count Eval #}
+    <p class="text-muted small fw-semibold mb-2 mt-4 text-uppercase" style="letter-spacing:.05em;">Token Count Eval</p>
+    <div class="row g-3">
+      {{ metric_col('Cosine Similarity', data.metrics.cos_similarity) }}
+    </div>
+
   </div>
 </div>
 {% endif %}

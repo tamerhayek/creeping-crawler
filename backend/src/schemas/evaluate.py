@@ -4,22 +4,20 @@ from pydantic import BaseModel
 
 
 class EvaluateRequest(BaseModel):
-    """Request body for POST /evaluate."""
-
-    parsed_text: str  # output of the parser
-    gold_text: str    # manually curated ground truth
+    parsed_text: str
+    gold_text: str
 
 
 class TokenLevelEval(BaseModel):
-    """Token-level precision, recall, and F1 scores."""
-
     precision: float
     recall: float
     f1: float
 
 
-class EvaluateResponse(BaseModel):
-    """Response for POST /evaluate and GET /full_gs_eval."""
+class TokenCountEval(BaseModel):
+    cos_similarity: float
 
+
+class EvaluateResponse(BaseModel):
     token_level_eval: TokenLevelEval
-    x_eval: dict = {}  # reserved for additional evaluation methods
+    token_count_eval: TokenCountEval
