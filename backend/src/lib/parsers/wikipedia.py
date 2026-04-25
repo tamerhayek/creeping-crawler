@@ -1,10 +1,12 @@
 """Wikipedia-specific content parser.
 
-Receives Crawl4AI markdown (already scoped to .mw-parser-output by css_selector)
-and removes non-informative trailing sections.
+Receives Crawl4AI markdown (already filtered by CrawlerRunConfig) and
+removes non-informative trailing sections plus residual boilerplate lines.
 """
 
 from __future__ import annotations
+
+import re
 
 from .base import ContentParser
 
@@ -15,30 +17,30 @@ class WikipediaParser(ContentParser):
     Pipeline:
       1. Walk the Crawl4AI markdown line by line.
       2. When a heading matches an excluded section, stop collecting.
-      3. Return the cleaned markdown.
+      3. Drop residual boilerplate lines (edit links, coordinate lines, etc.).
+      4. Return the cleaned markdown.
     """
 
     EXCLUDED_SECTIONS = frozenset({
-        # English
-        "see also", "references", "notes", "citations",
-        "further reading", "external links", "sources",
-        "bibliography", "works cited", "footnotes",
-        "notes and references", "references and notes",
-        # Italian
         "collegamenti esterni", "note", "riferimenti",
         "bibliografia", "fonti", "altri progetti", "voci correlate",
     })
 
+    _SKIP_PATTERNS: tuple[re.Pattern, ...] = (
+        # Coordinate lines e.g. "43°N 12°E" or "Coordinate: 41°54′N 12°29′E"
+        re.compile(r"coordinate[:\s]", re.IGNORECASE),
+        re.compile(r"\d+[°][^\n]{0,30}[NSEW]"),
+        # Bare edit-section links: "[modifica | modifica wikitesto]"
+        re.compile(r"\[modifica", re.IGNORECASE),
+        re.compile(r"\[edit\b", re.IGNORECASE),
+        # Disambiguation notice lines
+        re.compile(r"^disambigua", re.IGNORECASE),
+        # Lines that are only wiki-style image/file markup residues
+        re.compile(r"^\s*!\["),
+    )
+
     def parse(self, url: str, markdown: str) -> str:
-        """Remove non-informative sections from Crawl4AI markdown.
-
-        Args:
-            url:      source URL (unused).
-            markdown: raw markdown produced by Crawl4AI.
-
-        Returns:
-            Cleaned markdown stopping before the first excluded section heading.
-        """
+        """Remove non-informative sections and boilerplate from Crawl4AI markdown."""
         collected: list[str] = []
 
         for line in markdown.split("\n"):
@@ -46,6 +48,10 @@ class WikipediaParser(ContentParser):
                 heading = line.lstrip("#").strip().lower()
                 if heading in self.EXCLUDED_SECTIONS:
                     break
+
+            if any(pat.search(line) for pat in self._SKIP_PATTERNS):
+                continue
+
             collected.append(line)
 
         while collected and not collected[-1].strip():
