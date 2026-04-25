@@ -14,10 +14,12 @@ class TokenLevelEval(BaseModel):
     f1: float
 
 
-class TokenCountEval(BaseModel):
-    cos_similarity: float
+class SimilarityEval(BaseModel):
+    cosine: float
+    jaccard: float
+    excess_ratio: float
 
 
 class EvaluateResponse(BaseModel):
     token_level_eval: TokenLevelEval
-    token_count_eval: TokenCountEval
+    similarity_eval: SimilarityEval

@@ -1,7 +1,7 @@
 """Evaluation metrics for token-level and token-count-level comparison.
 
 token_level_eval  — operates on token *sets* (presence/absence)
-token_count_eval  — operates on token *frequency vectors* (cosine similarity)
+similarity_eval   — operates on token *frequency vectors* (cosine, jaccard, excess_ratio)
 
 Both functions receive raw parsed_text and gold_text strings and handle
 stripping/tokenization internally.
@@ -24,6 +24,22 @@ class TokenLevelMetrics:
     precision: float
     recall: float
     f1: float
+
+
+@dataclass(frozen=True)
+class ContentMetrics:
+    """Immutable result of frequency-vector-based content evaluation.
+
+    cosine       — cos(θ) between frequency vectors; high → similar distribution.
+    jaccard      — |A∩B| / |A∪B| on token sets; penalises both extra and missing tokens.
+    excess_ratio — fraction of parsed tokens not matched by gold (lower is better).
+                   Computed on frequency vectors: 1 - overlap/total_parsed, where
+                   overlap = Σ min(freq_parsed[t], freq_gold[t]).
+    """
+
+    cosine: float
+    jaccard: float
+    excess_ratio: float
 
 
 def calculate_token_level_metrics(parsed_text: str, gold_text: str) -> TokenLevelMetrics:
@@ -58,26 +74,49 @@ def calculate_token_level_metrics(parsed_text: str, gold_text: str) -> TokenLeve
     )
 
 
-def calculate_cosine_similarity(parsed_text: str, gold_text: str) -> float:
-    """Compute cosine similarity between parsed and gold text using token frequency vectors.
+def calculate_content_metrics(parsed_text: str, gold_text: str) -> ContentMetrics:
+    """Compute cosine similarity, Jaccard similarity, and excess ratio.
 
-    Strips markdown from parsed_text before comparison.
-    Unlike precision/recall (which use sets), this accounts for how often each
-    token appears — two texts with the same words but very different frequencies
-    will score lower.
+    All three metrics strip markdown before processing.
 
-    Formula: cos(θ) = (A·B) / (|A| · |B|)
+    cosine similarity — frequency-vector dot product normalised by magnitudes.
+        cos(θ) = (A·B) / (|A|·|B|)
+        Sensitive to token frequency distributions; less sensitive to extra content.
 
-    Returns 0.0 if either text is empty.
+    jaccard similarity — set overlap normalised by union size.
+        J = |A∩B| / |A∪B|
+        Penalises both extra tokens (enlarges union) and missing tokens.
+
+    excess ratio — fraction of parsed token occurrences not covered by gold.
+        excess = 1 - Σ min(fp[t], fg[t]) / Σ fp[t]
+        Directly measures how much extracted content is noise. Lower is better.
+
+    Returns zeros for all metrics if either text is empty.
     """
-    freq_a = Counter(strip_markdown(parsed_text).split())
-    freq_b = Counter(strip_markdown(gold_text).split())
+    parsed_stripped = strip_markdown(parsed_text)
+    gold_stripped = strip_markdown(gold_text)
 
-    if not freq_a or not freq_b:
-        return 0.0
+    freq_p = Counter(parsed_stripped.split())
+    freq_g = Counter(gold_stripped.split())
 
-    dot = sum(freq_a[t] * freq_b[t] for t in freq_a if t in freq_b)
-    mag_a = math.sqrt(sum(v ** 2 for v in freq_a.values()))
-    mag_b = math.sqrt(sum(v ** 2 for v in freq_b.values()))
+    if not freq_p or not freq_g:
+        return ContentMetrics(cosine=0.0, jaccard=0.0, excess_ratio=0.0)
 
-    return dot / (mag_a * mag_b) if mag_a and mag_b else 0.0
+    # Cosine
+    dot = sum(freq_p[t] * freq_g[t] for t in freq_p if t in freq_g)
+    mag_p = math.sqrt(sum(v ** 2 for v in freq_p.values()))
+    mag_g = math.sqrt(sum(v ** 2 for v in freq_g.values()))
+    cosine = dot / (mag_p * mag_g) if mag_p and mag_g else 0.0
+
+    # Jaccard (set-based)
+    set_p = set(freq_p)
+    set_g = set(freq_g)
+    union = len(set_p | set_g)
+    jaccard = len(set_p & set_g) / union if union else 0.0
+
+    # Excess ratio (frequency-based)
+    overlap = sum(min(freq_p[t], freq_g[t]) for t in freq_p if t in freq_g)
+    total_parsed = sum(freq_p.values())
+    excess_ratio = 1.0 - (overlap / total_parsed) if total_parsed else 0.0
+
+    return ContentMetrics(cosine=cosine, jaccard=jaccard, excess_ratio=excess_ratio)

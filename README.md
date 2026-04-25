@@ -78,15 +78,27 @@ Gold standard data lives in `gs_data/`. A domain is supported when it has a corr
 
 ## Metrics
 
-Evaluation is token-based. Both the parsed text and the gold standard text are tokenized (whitespace splitting after markdown stripping), and the following metrics are computed on the sets of unique tokens:
+Both the parsed text and the gold standard are stripped of markdown before scoring.
+
+### Token Level Eval — set-based
+
+Unique token sets (whitespace splitting after markdown stripping):
 
 | Metric | Formula | Meaning |
 |--------|---------|---------|
 | **Precision** | `\|parsed ∩ gold\| / \|parsed\|` | How much of the extracted content is relevant |
 | **Recall** | `\|parsed ∩ gold\| / \|gold\|` | How much of the gold content was extracted |
-| **F1** | `2 · (precision · recall) / (precision + recall)` | Harmonic mean of precision and recall |
+| **F1** | `2 · P · R / (P + R)` | Harmonic mean of precision and recall |
 
-Markdown formatting characters are stripped from the parsed text before tokenization so they don't affect the scores.
+### Similarity Eval — frequency-vector-based
+
+Operates on token frequency vectors (Counter), more sensitive to repeated terms and extra content:
+
+| Metric | Formula | Meaning |
+|--------|---------|---------|
+| **Cosine** | `(A·B) / (\|A\|·\|B\|)` | Frequency-distribution similarity; high even when extra content is present |
+| **Jaccard** | `\|A ∩ B\| / \|A ∪ B\|` | Set overlap over union; penalises both extra and missing tokens |
+| **Excess Ratio** | `1 − Σ min(fp[t], fg[t]) / Σ fp[t]` | Fraction of extracted tokens not covered by gold — **lower is better** |
 
 ---
 

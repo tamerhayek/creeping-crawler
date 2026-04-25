@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Crawl4AI Evaluation Framework — a Python tool that evaluates content extraction quality from web pages. It crawls URLs with Crawl4AI, parses the resulting markdown with URL-specific parsers, and scores extraction quality against gold standard samples using precision, recall, and F1. It also exposes a FastAPI REST server for all evaluation operations.
+Crawl4AI Evaluation Framework — a Python tool that evaluates content extraction quality from web pages. It crawls URLs with Crawl4AI, parses the resulting markdown with URL-specific parsers, and scores extraction quality against gold standard samples using two evaluation groups: token-level (precision/recall/F1) and similarity (cosine/jaccard/excess ratio). It also exposes a FastAPI REST server for all evaluation operations.
 
 ## Tech stack
 
@@ -90,7 +90,7 @@ backend/                      — Backend (Python, FastAPI, Crawl4AI)
         crawler.py            — Fetches page content via Crawl4AI; returns PageContent
         configs/              — Per-domain CrawlerRunConfig definitions
       evaluation/
-        metrics.py            — Precision/recall/F1 calculation
+        metrics.py            — Token Level Eval (precision/recall/F1) + Similarity Eval (cosine/jaccard/excess_ratio)
         tokens.py             — Whitespace-based tokenization + markdown stripping
       gold_standard/
         gold.py               — Gold standard sample loading
@@ -153,5 +153,7 @@ Errors: `400` unsupported domain, `404` URL not in GS, `503` unreachable URL.
 - **Fetch strategy**: always use `fetch_page_for_url()` in `src/lib/services.py` — it uses the stored `html_text` snapshot from `gs_data/` when available, falling back to a live crawl if the snapshot produces empty markdown
 - **HTML-to-markdown config**: `fetch_page_from_html()` uses a browser-free `CrawlerRunConfig` (no `magic`) so Crawl4AI skips Playwright and runs only the HTML→markdown pipeline; domain extraction filters are preserved
 - **Markdown stripping**: `strip_markdown()` in `src/lib/evaluation/tokens.py` removes markdown before scoring
+- **Evaluation groups**: `POST /evaluate` returns two groups — `token_level_eval` (precision/recall/F1, set-based) and `similarity_eval` (cosine/jaccard/excess_ratio, frequency-vector-based); schemas are `TokenLevelEval` and `SimilarityEval`
+- **Excess ratio**: fraction of extracted token occurrences not covered by gold (`1 − overlap/total_parsed`); lower is better — directly measures parser noise
 - **Page profiles**: WikipediaParser uses per-page `WikipediaSectionProfile` configs in `PAGE_PROFILES`
-- **Frozen dataclasses**: `TokenMetrics`, `EvaluationResult`, `WikipediaSectionProfile`
+- **Frozen dataclasses**: `TokenLevelMetrics`, `ContentMetrics`

@@ -81,7 +81,7 @@ def evaluate(parsed_text: str, gold_text: str) -> dict | None:
         )
         if resp.status_code == 200:
             body = resp.json()
-            return {**body["token_level_eval"], **body.get("token_count_eval", {})}
+            return {**body["token_level_eval"], **body.get("similarity_eval", {})}
         else:
             return None
     except requests.exceptions.ConnectionError as e:

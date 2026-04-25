@@ -5,10 +5,10 @@ from urllib.parse import urlparse
 from fastapi import HTTPException
 
 from .crawling.crawler import fetch_page, fetch_page_from_html, PageContent
-from .evaluation.metrics import calculate_cosine_similarity, calculate_token_level_metrics
+from .evaluation.metrics import calculate_content_metrics, calculate_token_level_metrics
 from .gold_standard.gold import get_entry_for_url, load_gold_text
 from .gold_standard.urls import is_supported_domain
-from ..schemas import GoldStandardEntry, TokenCountEval, TokenLevelEval
+from ..schemas import GoldStandardEntry, SimilarityEval, TokenLevelEval
 
 
 async def fetch_page_for_url(url: str) -> PageContent:
@@ -36,9 +36,10 @@ def compute_token_level_eval(parsed_text: str, gold_text: str) -> TokenLevelEval
     return TokenLevelEval(precision=m.precision, recall=m.recall, f1=m.f1)
 
 
-def compute_token_count_eval(parsed_text: str, gold_text: str) -> TokenCountEval:
-    """Compute token-count-based metrics (cosine similarity) between parsed and gold text."""
-    return TokenCountEval(cos_similarity=calculate_cosine_similarity(parsed_text, gold_text))
+def compute_similarity_eval(parsed_text: str, gold_text: str) -> SimilarityEval:
+    """Compute token-count-based metrics (cosine, jaccard, excess_ratio) between parsed and gold text."""
+    m = calculate_content_metrics(parsed_text, gold_text)
+    return SimilarityEval(cosine=m.cosine, jaccard=m.jaccard, excess_ratio=m.excess_ratio)
 
 
 async def build_gold_entry(url: str) -> GoldStandardEntry:
