@@ -60,6 +60,9 @@ def compare(request: Request, url: str = ""):
 
         if not error:
             data["cleaned_text"] = strip_markdown(data.get("parsed_text", ""))
+            raw_html = data.get("html_text", "")
+            if raw_html:
+                data["html_text"] = BeautifulSoup(raw_html, "html.parser").prettify()
 
         if not error and url in gs_urls:
             gold_text = get_gold_text(url)

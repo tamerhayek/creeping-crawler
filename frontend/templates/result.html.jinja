@@ -24,9 +24,15 @@
 
 {# ── Metrics card ─────────────────────────────────────────────────────────── #}
 {% if data.metrics %}
-<div class="card mb-4 shadow-sm">
+{% set metrics_info = {
+  'Precision': 'Of all tokens returned by the parser, the fraction that also appear in the Gold Standard.<br><br><code>Precision = |parsed ∩ gold| / |parsed|</code><br><br>High precision → few extra/wrong tokens.',
+  'Recall':    'Of all tokens in the Gold Standard, the fraction that were returned by the parser.<br><br><code>Recall = |parsed ∩ gold| / |gold|</code><br><br>High recall → few missing tokens.',
+  'F1 Score':  'Harmonic mean of Precision and Recall. Penalises extreme imbalances between the two.<br><br><code>F1 = 2 · (P · R) / (P + R)</code><br><br>Best overall single-number quality indicator.'
+} %}
+<div class="card mb-4 shadow-sm card-gs">
   <div class="card-header fw-semibold">
-    Evaluation Metrics <span class="text-muted fw-normal small">(vs Gold Standard)</span>
+    <span class="gs-dot me-1">●</span> Evaluation Metrics
+    <span class="text-muted fw-normal small">(vs Gold Standard)</span>
   </div>
   <div class="card-body">
     <div class="row g-4">
@@ -37,7 +43,23 @@
       ] %}
       <div class="col-md-4">
         <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="fw-medium">{{ label }}</span>
+          <span class="fw-medium d-flex align-items-center gap-1">
+            {{ label }}
+            <button type="button"
+                    class="btn btn-link p-0 lh-1 text-muted metric-info"
+                    data-bs-toggle="popover"
+                    data-bs-trigger="hover focus"
+                    data-bs-placement="top"
+                    data-bs-html="true"
+                    data-bs-title="{{ label }}"
+                    data-bs-content="{{ metrics_info[label] }}"
+                    style="font-size: 0.75rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+              </svg>
+            </button>
+          </span>
           <span class="badge fs-6
             {% if val >= 0.7 %}bg-success
             {% elif val >= 0.4 %}bg-warning text-dark
@@ -125,6 +147,12 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+    new bootstrap.Popover(el, { sanitize: false });
+  });
+</script>
+
 {% if not error and data.gold_text is defined and data.gold_text %}
 <script>
   var __originalText = {{ data.cleaned_text | tojson }};
