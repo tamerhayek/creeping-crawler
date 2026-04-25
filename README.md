@@ -32,8 +32,18 @@ make run-frontend   # http://localhost:8004
 
 ```bash
 make freeze         # Snapshot requirements.txt files from current envs
-make crawl          # Crawl all gold standard URLs and save results to gs_results/
 make delete-envs    # Remove conda environments
+```
+
+### Crawling gold standard URLs
+
+Results are saved to `gs_results/` (prettified HTML, cleaned HTML, markdown).
+
+```bash
+make crawl                                        # all domains
+make crawl -- --domain www.xe.com                 # single domain
+make crawl -- --update-json                       # all domains + update html_text in gs_data/
+make crawl -- --domain www.xe.com --update-json   # single domain + update JSON
 ```
 
 ## REST API
@@ -54,7 +64,19 @@ Errors: `400` unsupported domain · `404` URL not in GS · `503` unreachable URL
 
 ## Supported domains
 
-Gold standard data lives in `gs_data/`. A domain is supported when it has a corresponding `<domain>_gs.json` file there. Currently supported: English Wikipedia, Italian Wikipedia, CNBC, XE.
+Gold standard data lives in `gs_data/`. A domain is supported when it has a corresponding `<domain>_gs.json` file there. Currently supported: Italian Wikipedia, ESPN, CNBC, XE.
+
+## Metrics
+
+Evaluation is token-based. Both the parsed text and the gold standard text are tokenized (whitespace splitting after markdown stripping), and the following metrics are computed on the sets of unique tokens:
+
+| Metric | Formula | Meaning |
+|--------|---------|---------|
+| **Precision** | `\|parsed ∩ gold\| / \|parsed\|` | How much of the extracted content is relevant |
+| **Recall** | `\|parsed ∩ gold\| / \|gold\|` | How much of the gold content was extracted |
+| **F1** | `2 · (precision · recall) / (precision + recall)` | Harmonic mean of precision and recall |
+
+Markdown formatting characters are stripped from the parsed text before tokenization so they don't affect the scores.
 
 ---
 
