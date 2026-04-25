@@ -29,11 +29,12 @@ class TokenLevelMetrics:
 def calculate_token_level_metrics(parsed_text: str, gold_text: str) -> TokenLevelMetrics:
     """Compute precision, recall, and F1 between parsed and gold text.
 
-    Strips markdown from parsed_text before tokenization.
-    Returns zero for all scores if either text is empty.
+    Both texts are passed through strip_markdown before tokenization so that
+    unicode normalisation (quotes, dashes) and HTML-entity decoding are applied
+    symmetrically. Returns zero for all scores if either text is empty.
     """
     extracted_tokens = extract_unique_tokens(strip_markdown(parsed_text))
-    sample_tokens = extract_unique_tokens(gold_text)
+    sample_tokens = extract_unique_tokens(strip_markdown(gold_text))
 
     intersection_count = len(extracted_tokens & sample_tokens)
     extracted_count = len(extracted_tokens)
@@ -70,7 +71,7 @@ def calculate_cosine_similarity(parsed_text: str, gold_text: str) -> float:
     Returns 0.0 if either text is empty.
     """
     freq_a = Counter(strip_markdown(parsed_text).split())
-    freq_b = Counter(gold_text.split())
+    freq_b = Counter(strip_markdown(gold_text).split())
 
     if not freq_a or not freq_b:
         return 0.0
