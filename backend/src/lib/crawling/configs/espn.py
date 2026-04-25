@@ -24,7 +24,9 @@ CONFIG = CrawlerRunConfig(
         ".article-footer, .article-legal-footer, "
         # Cookie consent (OneTrust)
         ".ot-sdk-container, #onetrust-consent-sdk, "
-        "#onetrust-button-group-parent, .ot-cat-grp"
+        "#onetrust-button-group-parent, .ot-cat-grp, "
+        # Video player
+        ".WebPlayerContainer, .video-play-button, .contentItem__content, figcaption"
     ),
     remove_forms=True,
 )
