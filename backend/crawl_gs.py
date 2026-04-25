@@ -16,6 +16,8 @@ Output structure:
     html/           <- result.html, prettified
     cleaned_html/   <- result.cleaned_html, prettified
     markdown/       <- result.markdown, .md file
+    stripped/       <- strip_markdown(markdown), plain text
+    parsed/         <- parser.parse(url, markdown), domain-specific parsed text
 """
 
 import argparse
@@ -32,12 +34,16 @@ sys.path.insert(0, str(Path(__file__).parent))
 from crawl4ai import AsyncWebCrawler
 
 from src.lib.crawling.configs.registry import config_for
+from src.lib.evaluation.tokens import strip_markdown
+from src.lib.parsers.registry import get_parser_for_url
 
-GS_DIR      = Path(__file__).parent.parent / "gs_data"
-OUT_DIR     = Path(__file__).parent.parent / "gs_results"
-HTML_DIR    = OUT_DIR / "html"
-CLEANED_DIR = OUT_DIR / "cleaned_html"
-MD_DIR      = OUT_DIR / "markdown"
+GS_DIR       = Path(__file__).parent.parent / "gs_data"
+OUT_DIR      = Path(__file__).parent.parent / "gs_results"
+HTML_DIR     = OUT_DIR / "html"
+CLEANED_DIR  = OUT_DIR / "cleaned_html"
+MD_DIR       = OUT_DIR / "markdown"
+STRIPPED_DIR = OUT_DIR / "stripped"
+PARSED_DIR   = OUT_DIR / "parsed"
 
 
 def url_to_slug(url: str) -> str:
@@ -58,7 +64,7 @@ def html_for_json(html: str) -> str:
 
 
 async def crawl_all(update_json: bool = False, domain: str | None = None):
-    for d in (HTML_DIR, CLEANED_DIR, MD_DIR):
+    for d in (HTML_DIR, CLEANED_DIR, MD_DIR, STRIPPED_DIR, PARSED_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
     # Load all gs files and index entries by URL
@@ -108,11 +114,28 @@ async def crawl_all(update_json: bool = False, domain: str | None = None):
             md = result.markdown
             if hasattr(md, "raw_markdown"):
                 md = md.raw_markdown or ""
-            (MD_DIR / f"{slug}.md").write_text(md or "", encoding="utf-8")
+            md = md or ""
+            (MD_DIR / f"{slug}.md").write_text(md, encoding="utf-8")
 
+            # gs_results/stripped/ — plain text after markdown stripping
+            stripped = strip_markdown(md) if md else ""
+            (STRIPPED_DIR / f"{slug}.txt").write_text(stripped, encoding="utf-8")
+
+            # gs_results/parsed/ — domain-specific parser output
+            content_parser = get_parser_for_url(url)
+            try:
+                parsed = content_parser.parse(url, md) if md else ""
+            except Exception as e:
+                print(f"  WARNING: parser failed for {url}: {e}")
+                parsed = stripped
+            (PARSED_DIR / f"{slug}.txt").write_text(parsed, encoding="utf-8")
+
+            parser_name = type(content_parser).__name__
             print(f"  -> gs_results/html/{slug}.html")
             print(f"  -> gs_results/cleaned_html/{slug}.html")
             print(f"  -> gs_results/markdown/{slug}.md")
+            print(f"  -> gs_results/stripped/{slug}.txt  [{parser_name}]")
+            print(f"  -> gs_results/parsed/{slug}.txt    [{parser_name}]")
 
             if update_json:
                 gs_file = url_to_file[url]

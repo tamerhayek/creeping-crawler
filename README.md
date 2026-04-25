@@ -37,7 +37,17 @@ make delete-envs    # Remove conda environments
 
 ### Crawling gold standard URLs
 
-Results are saved to `gs_results/` (prettified HTML, cleaned HTML, markdown).
+Results are saved to `gs_results/`:
+
+| Directory | Content |
+|-----------|---------|
+| `html/` | Raw HTML, prettified |
+| `cleaned_html/` | Cleaned HTML, prettified |
+| `markdown/` | Raw markdown from Crawl4AI (`.md`) |
+| `stripped/` | Plain text after markdown stripping (`.txt`) |
+| `parsed/` | Domain-specific parser output (`.txt`) |
+
+The `stripped/` and `parsed/` outputs mirror the real application pipeline: `strip_markdown()` removes markdown syntax, then the domain parser (e.g. `WikipediaParser`, `CnbcParser`) applies its own extraction logic. The parser used is logged for each URL.
 
 ```bash
 make crawl                                        # all domains
