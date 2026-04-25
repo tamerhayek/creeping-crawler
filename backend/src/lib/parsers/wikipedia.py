@@ -33,6 +33,9 @@ class WikipediaParser(ContentParser):
         # Bare edit-section links: "[modifica | modifica wikitesto]"
         re.compile(r"\[modifica", re.IGNORECASE),
         re.compile(r"\[edit\b", re.IGNORECASE),
+        # Skip-navigation links: "[Vai al contenuto](...)", "[Salta a](...)"
+        re.compile(r"^\[vai al\b", re.IGNORECASE),
+        re.compile(r"^\[salta al?\b", re.IGNORECASE),
         # Disambiguation notice lines
         re.compile(r"^disambigua", re.IGNORECASE),
         # Lines that are only wiki-style image/file markup residues
