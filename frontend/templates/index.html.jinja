@@ -3,51 +3,90 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-lg-7">
+  <div class="col-lg-6">
     <h1 class="mb-1">Content Extraction Evaluator</h1>
     <p class="text-muted mb-4">
-      Compare raw crawled text with parsed clean text, and evaluate against the Gold Standard when available.
+      Crawl a URL, parse the content, and evaluate against the Gold Standard when available.
     </p>
 
-    <div class="card shadow-sm">
+    {% if gs_urls %}
+    <!-- Gold Standard quick-select -->
+    <div class="card shadow-sm mb-3" id="gsCard">
+      <div class="card-body p-4">
+        <label for="gsSelect" class="form-label fw-semibold mb-2">
+          <span class="gs-dot me-1">●</span> Gold Standard URLs
+        </label>
+        <select class="form-select form-select-sm" id="gsSelect">
+          <option value="">Select a GS URL to autofill</option>
+          {% for u in gs_urls %}
+          <option value="{{ u }}">{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Main form -->
+    <div class="card shadow-sm" id="mainCard">
       <div class="card-body p-4">
         <form action="/compare" method="get" id="compareForm">
-
-          <div class="mb-3">
+          <div class="mb-4">
             <label for="urlInput" class="form-label fw-semibold">URL</label>
             <input type="url" class="form-control" id="urlInput" name="url"
-                   placeholder="https://en.wikipedia.org/wiki/…" required>
-            <div class="form-text">Supported domains: Wikipedia (en · it)</div>
+                   placeholder="https://it.wikipedia.org/wiki/…" autocomplete="off" required>
+            <div class="form-text mt-1" id="gsHint" style="display:none;">
+              <span class="badge gs-badge">Gold Standard</span> Metric evaluation will be included.
+            </div>
           </div>
 
-          {% if gs_urls %}
-          <div class="mb-4">
-            <label for="gsSelect" class="form-label fw-semibold">Quick-select from Gold Standard</label>
-            <select class="form-select" id="gsSelect">
-              <option value="">— choose a GS URL —</option>
-              {% for u in gs_urls %}
-              <option value="{{ u }}">{{ u }}</option>
-              {% endfor %}
-            </select>
-            <div class="form-text">Selecting a GS URL fills the input above and enables metric evaluation.</div>
-          </div>
-          {% endif %}
-
-          <button type="submit" class="btn btn-primary px-4">Compare</button>
+          <button type="submit" class="btn btn-primary px-4" id="submitBtn" disabled>
+            Crawl
+          </button>
         </form>
       </div>
     </div>
+
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  const sel = document.getElementById('gsSelect');
-  if (sel) {
-    sel.addEventListener('change', function () {
-      if (this.value) document.getElementById('urlInput').value = this.value;
-    });
+  const gsUrls = new Set({{ gs_urls | tojson }});
+  const urlInput = document.getElementById('urlInput');
+  const submitBtn = document.getElementById('submitBtn');
+  const gsHint = document.getElementById('gsHint');
+  const mainCard = document.getElementById('mainCard');
+  const gsSelect = document.getElementById('gsSelect');
+
+  function update() {
+    const val = urlInput.value.trim();
+    const isGs = gsUrls.has(val);
+    const hasUrl = val.length > 0;
+
+    // Enable/disable button
+    submitBtn.disabled = !hasUrl;
+
+    // Toggle button label and color
+    submitBtn.textContent = isGs ? 'Compare' : 'Crawl';
+    submitBtn.classList.toggle('btn-primary', !isGs);
+    submitBtn.classList.toggle('btn-gold', isGs);
+
+    // Toggle gold highlight on card
+    mainCard.classList.toggle('card-gs', isGs);
+    gsHint.style.display = isGs ? 'block' : 'none';
   }
+
+  urlInput.addEventListener('input', update);
+
+  {% if gs_urls %}
+  gsSelect.addEventListener('change', function () {
+    if (this.value) {
+      urlInput.value = this.value;
+      this.value = '';
+      update();
+    }
+  });
+  {% endif %}
 </script>
 {% endblock %}

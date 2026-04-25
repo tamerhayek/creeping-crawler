@@ -2,6 +2,36 @@ body {
   background-color: #f0f2f5;
 }
 
+/* ── Gold Standard highlights ────────────────────────────────────────────── */
+
+.gs-dot {
+  color: #c9a227;
+}
+
+.card-gs {
+  border: 1.5px solid #c9a227 !important;
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15) !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gs-badge {
+  background-color: #c9a227;
+  color: #fff;
+  font-size: 0.72rem;
+}
+
+.btn-gold {
+  background-color: #c9a227;
+  border-color: #c9a227;
+  color: #fff;
+}
+
+.btn-gold:hover {
+  background-color: #b08c1e;
+  border-color: #b08c1e;
+  color: #fff;
+}
+
 /* ── Text comparison panels ─────────────────────────────────────────────── */
 
 .panel-header {
