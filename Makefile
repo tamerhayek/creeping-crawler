@@ -4,7 +4,8 @@
         run-backend run-frontend \
         crawl \
         freeze-backend freeze-frontend freeze \
-        delete-backend delete-frontend delete-envs
+        delete-backend delete-frontend delete-envs \
+        grader-load test
 
 CONDA ?= $(shell which conda)
 
@@ -79,6 +80,24 @@ freeze-frontend:
 
 # Snapshot dependencies for both environments.
 freeze: freeze-backend freeze-frontend
+
+# ─── Grader ──────────────────────────────────────────────────────────────────
+
+GRADER_IMAGE  ?= lab-grader-esonero.tar.gz
+GRADER_TAG    := lab-grader-esonero-1:1.0.1
+STUDENT_ID    ?=
+
+# Load the grader Docker image from the .tar.gz file.
+grader-load:
+	docker load -i $(GRADER_IMAGE)
+
+# Run the grader against the running project.
+# Usage: make test STUDENT_ID=<your_student_id>
+test:
+ifndef STUDENT_ID
+	$(error STUDENT_ID is not set. Usage: make test STUDENT_ID=<your_student_id>)
+endif
+	docker run --network host $(GRADER_TAG) $(STUDENT_ID)
 
 # ─── Cleanup ─────────────────────────────────────────────────────────────────
 
