@@ -8,12 +8,27 @@ from urllib.parse import urlparse
 
 from fastapi import HTTPException
 
-from .crawling.crawler import fetch_page
+from .crawling.crawler import fetch_page, fetch_page_from_html, PageContent
 from .evaluation.metrics import calculate_metrics
 from .evaluation.tokens import extract_unique_tokens, strip_markdown
 from .gold_standard.gold import get_entry_for_url, load_gold_text
 from .gold_standard.urls import is_supported_domain
 from ..schemas import GoldStandardEntry, TokenLevelEval
+
+async def fetch_page_for_url(url: str) -> PageContent:
+    """Fetch a page using the stored HTML from the gold standard if available, else crawl live.
+
+    Tries the GS snapshot first. Falls back to a live crawl if the snapshot
+    produces empty markdown (e.g. conversion failure on very large HTML).
+    """
+    entry = get_entry_for_url(url)
+    if entry and entry.get("html_text"):
+        page = await fetch_page_from_html(url, entry["html_text"])
+        if page.markdown_text:
+            return page
+        # Snapshot produced empty markdown — fall back to live crawl
+    return await fetch_page(url)
+
 
 def domain_of(url: str) -> str:
     """Extract the netloc (domain) from a URL."""
@@ -51,7 +66,7 @@ async def build_gold_entry(url: str) -> GoldStandardEntry:
         raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
 
     try:
-        page = await fetch_page(url)
+        page = await fetch_page_for_url(url)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 

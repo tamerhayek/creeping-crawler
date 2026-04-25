@@ -7,9 +7,25 @@ the page title, raw HTML, and converted markdown.
 import re
 from dataclasses import dataclass
 
-from crawl4ai import AsyncWebCrawler
+from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
 
 from .configs.registry import config_for as _config_for
+
+
+def _html_only_config(url: str) -> CrawlerRunConfig:
+    """Return a browser-free config for processing already-fetched HTML.
+
+    Keeps domain-specific extraction filters (excluded_tags, excluded_selector,
+    remove_forms) but drops magic and any other flag that would trigger
+    Playwright, since we already have the HTML and only need the
+    HTML-to-markdown conversion pipeline.
+    """
+    base = _config_for(url)
+    return CrawlerRunConfig(
+        excluded_tags=base.excluded_tags,
+        excluded_selector=base.excluded_selector,
+        remove_forms=base.remove_forms,
+    )
 
 
 @dataclass
@@ -50,15 +66,19 @@ async def fetch_page(url: str) -> PageContent:
 
 
 async def fetch_page_from_html(url: str, html_text: str) -> PageContent:
-    """Process a raw HTML string through Crawl4AI as if it were fetched from url.
+    """Convert a stored HTML string to markdown using Crawl4AI's fast path.
 
-    Uses Crawl4AI's raw: scheme so the domain-specific config still applies.
+    Passes the HTML via the raw: scheme with a browser-free config so that
+    Crawl4AI skips Playwright and runs only the HTML-to-markdown pipeline.
+    Domain-specific extraction filters (excluded_tags, excluded_selector, etc.)
+    are preserved; magic/JS execution is intentionally disabled since the HTML
+    is already available and doesn't need rendering.
 
     Raises:
         RuntimeError: if Crawl4AI fails to process the HTML.
     """
     async with AsyncWebCrawler() as crawler:
-        result = await crawler.arun(url=f"raw:{html_text}", config=_config_for(url))
+        result = await crawler.arun(url=f"raw:{html_text}", config=_html_only_config(url))
 
     if not result.success:
         raise RuntimeError(f"HTML processing failed: {result.error_message}")

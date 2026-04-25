@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from ..lib import (
     assert_supported_domain,
     compute_token_eval,
-    fetch_page,
+    fetch_page_for_url,
     get_parser_for_url,
     get_urls_for_domain,
     load_gold_text,
@@ -31,12 +31,12 @@ async def full_gs_eval(domain: str = Query(...)):
     urls = get_urls_for_domain(domain)
 
     async def _eval_url(url: str) -> TokenLevelEval:
-        """Crawl, parse, and evaluate a single URL against its gold text."""
+        """Parse and evaluate a single URL against its gold text."""
         gold_text = load_gold_text(url)
         if not gold_text:
             raise HTTPException(status_code=404, detail=f"No gold text for: {url}")
         try:
-            page = await fetch_page(url)
+            page = await fetch_page_for_url(url)
         except RuntimeError as e:
             raise HTTPException(status_code=503, detail=str(e))
         parser = get_parser_for_url(url)

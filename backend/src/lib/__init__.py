@@ -22,4 +22,4 @@ from .gold_standard.urls import (
     is_supported_domain,
 )
 from .parsers import get_parser_for_url
-from .services import assert_supported_domain, build_gold_entry, compute_token_eval, domain_of
+from .services import assert_supported_domain, build_gold_entry, compute_token_eval, domain_of, fetch_page_for_url

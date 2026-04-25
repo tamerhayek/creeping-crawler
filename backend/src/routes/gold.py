@@ -8,7 +8,7 @@ from ..lib import (
     assert_supported_domain,
     build_gold_entry,
     domain_of,
-    fetch_page,
+    fetch_page_for_url,
     get_available_urls,
     get_entry_for_url,
     get_urls_for_domain,
@@ -35,7 +35,7 @@ async def gold_standard(url: str = Query(...)):
         raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
 
     try:
-        page = await fetch_page(url)
+        page = await fetch_page_for_url(url)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 

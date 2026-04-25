@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from ..lib import assert_supported_domain, domain_of, fetch_page, fetch_page_from_html, get_parser_for_url
+from ..lib import assert_supported_domain, domain_of, fetch_page_for_url, fetch_page_from_html, get_parser_for_url
 from ..schemas import ParseRequest, ParseResponse
 
 router = APIRouter()
@@ -15,7 +15,7 @@ async def parse_get(url: str = Query(...)):
     assert_supported_domain(domain)
 
     try:
-        page = await fetch_page(url)
+        page = await fetch_page_for_url(url)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
