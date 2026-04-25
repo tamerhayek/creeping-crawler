@@ -146,8 +146,9 @@ async def crawl_all(update_json: bool = False, domain: str | None = None):
                 print(f"  -> html_text updated in {gs_file.name}")
 
     if update_json:
-        for gs_file, entries in gs_files.items():
-            gs_file.write_text(json.dumps(entries, ensure_ascii=False, indent="\t"), encoding="utf-8")
+        files_to_save = {url_to_file[url] for url in urls}
+        for gs_file in files_to_save:
+            gs_file.write_text(json.dumps(gs_files[gs_file], ensure_ascii=False, indent="\t"), encoding="utf-8")
             print(f"\nSaved: {gs_file.name}")
 
 
