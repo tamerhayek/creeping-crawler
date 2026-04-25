@@ -2,7 +2,7 @@
         env-backend env-frontend envs \
         install-backend install-frontend install \
         run-backend run-frontend \
-        crawl crawl-update-json \
+        crawl \
         freeze-backend freeze-frontend freeze \
         delete-backend delete-frontend delete-envs
 
@@ -57,13 +57,15 @@ run-frontend:
 
 # ─── Crawl ───────────────────────────────────────────────────────────────────
 
-# Crawl all gold standard URLs and save HTML/markdown results to gs_results/.
+# Crawl gold standard URLs and save HTML/markdown results to gs_results/.
+# Pass args after --: make crawl -- --domain www.xe.com --update-json
+_CRAWL_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 crawl:
-	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend python crawl_gs.py
+	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend python crawl_gs.py $(_CRAWL_ARGS)
 
-# Crawl all gold standard URLs, save results to gs_results/, and update html_text in gs_data JSON files.
-crawl-update-json:
-	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend python crawl_gs.py --update-json
+# Catch-all: silences the extra "targets" Make sees when args are passed via --
+%:
+	@:
 
 # ─── Freeze ──────────────────────────────────────────────────────────────────
 

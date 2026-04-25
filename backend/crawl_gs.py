@@ -1,16 +1,20 @@
 """
-Crawl all URLs from gs_data using the domain configs in src/lib/crawling/configs/
-and:
-  1. Save results to gs_results/ for manual inspection
-  2. Update html_text in-place in each gs JSON file
+Crawl gold standard URLs and save results to gs_results/ for manual inspection.
+Optionally updates html_text in-place in the gs_data/ JSON files.
 
-Run from the project root:
-    make crawl
+Usage (via Makefile):
+    make crawl                                        # all domains
+    make crawl -- --domain www.xe.com                 # single domain
+    make crawl -- --update-json                       # all domains + update JSON
+    make crawl -- --domain www.xe.com --update-json   # single domain + update JSON
+
+Or directly:
+    python crawl_gs.py [--domain DOMAIN] [--update-json]
 
 Output structure:
   ../gs_results/
-    html/           <- result.html, pretty .html file
-    cleaned_html/   <- result.cleaned_html, pretty .html file
+    html/           <- result.html, prettified
+    cleaned_html/   <- result.cleaned_html, prettified
     markdown/       <- result.markdown, .md file
 """
 
@@ -53,7 +57,7 @@ def html_for_json(html: str) -> str:
     return html.replace("\n", "").replace("\r", "")
 
 
-async def crawl_all(update_json: bool = False):
+async def crawl_all(update_json: bool = False, domain: str | None = None):
     for d in (HTML_DIR, CLEANED_DIR, MD_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
@@ -66,6 +70,13 @@ async def crawl_all(update_json: bool = False):
         for entry in entries:
             if "url" in entry:
                 url_to_file[entry["url"]] = gs_file
+
+    if domain is not None:
+        filtered = {url: f for url, f in url_to_file.items() if domain in url}
+        if not filtered:
+            print(f"ERROR: domain '{domain}' not found in any gold standard file.", file=sys.stderr)
+            sys.exit(1)
+        url_to_file = filtered
 
     urls = list(url_to_file.keys())
     print(f"Found {len(urls)} URLs\n")
@@ -124,5 +135,10 @@ if __name__ == "__main__":
         action="store_true",
         help="Also update html_text in the gs_data JSON files.",
     )
+    parser.add_argument(
+        "--domain",
+        metavar="DOMAIN",
+        help="Crawl only URLs belonging to this domain (e.g. www.xe.com).",
+    )
     args = parser.parse_args()
-    asyncio.run(crawl_all(update_json=args.update_json))
+    asyncio.run(crawl_all(update_json=args.update_json, domain=args.domain))
