@@ -2,7 +2,7 @@
         env-backend env-frontend envs \
         install-backend install-frontend install \
         run-backend run-frontend \
-        crawl \
+        crawl crawl-update-json \
         freeze-backend freeze-frontend freeze \
         delete-backend delete-frontend delete-envs
 
@@ -60,6 +60,10 @@ run-frontend:
 # Crawl all gold standard URLs and save HTML/markdown results to gs_results/.
 crawl:
 	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend python crawl_gs.py
+
+# Crawl all gold standard URLs, save results to gs_results/, and update html_text in gs_data JSON files.
+crawl-update-json:
+	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend python crawl_gs.py --update-json
 
 # ─── Freeze ──────────────────────────────────────────────────────────────────
 

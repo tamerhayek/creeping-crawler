@@ -14,11 +14,14 @@ Output structure:
     markdown/       <- result.markdown, .md file
 """
 
+import argparse
 import asyncio
 import json
 import re
 import sys
 from pathlib import Path
+
+from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -40,12 +43,17 @@ def url_to_slug(url: str) -> str:
     return url
 
 
+def prettify_html(html: str) -> str:
+    """Return a prettified (indented, multi-line) version of the HTML."""
+    return BeautifulSoup(html, "lxml").prettify()
+
+
 def html_for_json(html: str) -> str:
     """Return HTML as a single-line string safe for embedding in JSON."""
     return html.replace("\n", "").replace("\r", "")
 
 
-async def crawl_all():
+async def crawl_all(update_json: bool = False):
     for d in (HTML_DIR, CLEANED_DIR, MD_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
@@ -78,11 +86,12 @@ async def crawl_all():
             slug = url_to_slug(url)
             html = result.html or ""
 
-            # gs_results/html/ — pretty multiline HTML file
-            (HTML_DIR / f"{slug}.html").write_text(html, encoding="utf-8")
+            # gs_results/html/ — prettified multiline HTML file
+            (HTML_DIR / f"{slug}.html").write_text(prettify_html(html), encoding="utf-8")
 
-            # gs_results/cleaned_html/ — pretty multiline HTML file
-            (CLEANED_DIR / f"{slug}.html").write_text(result.cleaned_html or "", encoding="utf-8")
+            # gs_results/cleaned_html/ — prettified multiline HTML file
+            cleaned = result.cleaned_html or ""
+            (CLEANED_DIR / f"{slug}.html").write_text(prettify_html(cleaned) if cleaned else "", encoding="utf-8")
 
             # gs_results/markdown/ — markdown file
             md = result.markdown
@@ -90,23 +99,30 @@ async def crawl_all():
                 md = md.raw_markdown or ""
             (MD_DIR / f"{slug}.md").write_text(md or "", encoding="utf-8")
 
-            # Update html_text in the gs JSON (single line, JSON-safe)
-            gs_file = url_to_file[url]
-            for entry in gs_files[gs_file]:
-                if entry["url"] == url:
-                    entry["html_text"] = html_for_json(html)
-                    break
-
             print(f"  -> gs_results/html/{slug}.html")
             print(f"  -> gs_results/cleaned_html/{slug}.html")
             print(f"  -> gs_results/markdown/{slug}.md")
-            print(f"  -> html_text updated in {gs_file.name}")
 
-    # Write updated gs JSON files
-    for gs_file, entries in gs_files.items():
-        gs_file.write_text(json.dumps(entries, ensure_ascii=False, indent="\t"), encoding="utf-8")
-        print(f"\nSaved: {gs_file.name}")
+            if update_json:
+                gs_file = url_to_file[url]
+                for entry in gs_files[gs_file]:
+                    if entry["url"] == url:
+                        entry["html_text"] = html_for_json(html)
+                        break
+                print(f"  -> html_text updated in {gs_file.name}")
+
+    if update_json:
+        for gs_file, entries in gs_files.items():
+            gs_file.write_text(json.dumps(entries, ensure_ascii=False, indent="\t"), encoding="utf-8")
+            print(f"\nSaved: {gs_file.name}")
 
 
 if __name__ == "__main__":
-    asyncio.run(crawl_all())
+    parser = argparse.ArgumentParser(description="Crawl gold standard URLs.")
+    parser.add_argument(
+        "--update-json",
+        action="store_true",
+        help="Also update html_text in the gs_data JSON files.",
+    )
+    args = parser.parse_args()
+    asyncio.run(crawl_all(update_json=args.update_json))
