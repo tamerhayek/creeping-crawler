@@ -1,6 +1,6 @@
 # Crawl4AI Evaluation Framework
 
-A Python tool that evaluates content extraction quality from web pages. It crawls URLs with Crawl4AI, parses the resulting markdown with URL-specific parsers, and scores extraction quality against gold standard samples using precision, recall, and F1.
+A Python tool that evaluates content extraction quality from web pages. It crawls URLs with Crawl4AI, parses the resulting markdown with URL-specific parsers, and scores extraction quality against gold standard samples using two evaluation groups: token-level (precision/recall/F1) and similarity (cosine/jaccard/excess ratio).
 
 ## Requirements
 

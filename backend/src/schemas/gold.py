@@ -9,7 +9,7 @@ class GoldStandardEntry(BaseModel):
     url: str
     domain: str
     title: str
-    html_text: str   # raw markdown from the crawler — input to the parser
+    html_text: str   # raw HTML of the page
     gold_text: str   # manually curated clean text — ground truth for evaluation
 
 

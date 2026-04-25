@@ -10,7 +10,6 @@ Crawl4AI Evaluation Framework — a Python tool that evaluates content extractio
 - Conda for environment management + pip for packages
 - Crawl4AI + Playwright for web crawling
 - FastAPI + Uvicorn for the REST API (both backend and frontend)
-- Pytest for testing
 
 ## Setup
 
@@ -39,15 +38,6 @@ Without Docker (two terminals):
 ```bash
 make run-backend    # Backend API on port 8003
 make run-frontend   # Frontend UI on port 8004
-```
-
-## Testing
-
-```bash
-conda activate crawl4ai-backend
-cd backend
-pytest        # Run all tests
-pytest -v     # Verbose
 ```
 
 ## Makefile commands
@@ -99,16 +89,17 @@ backend/                      — Backend (Python, FastAPI, Crawl4AI)
         base.py               — ContentParser ABC
         registry.py           — URL-based parser selection
         default.py            — PassThroughParser (no-op)
-        wikipedia.py          — WikipediaParser with section profiles
-        cnbc.py               — CNBCParser
-        espn.py               — ESPNParser
-  tests/                      — Pytest test suite
+        wikipedia.py          — WikipediaParser
+        cnbc.py               — CnbcParser
+        espn.py               — EspnParser
+        xe.py                 — XeParser
   requirements.txt            — Backend dependencies
 frontend/                     — Frontend (FastAPI + Jinja2, port 8004)
   src/
     app.py                    — FastAPI app entry point (uvicorn src.app:app)
     client.py                 — HTTP client to backend API
     templates.py              — Jinja2 template rendering helpers
+    utils.py                  — Shared text utilities (strip_markdown)
     routes/
       index.py                — URL input form + GS dropdown
       compare.py              — Raw / Parsed / Gold Standard comparison + metrics
@@ -135,6 +126,7 @@ docker-compose.yml            — Docker Compose config
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/parse?url=` | Crawl + parse a URL, return title/html_text/parsed_text |
+| POST | `/parse` | Parse provided `{url, html_text}` without crawling |
 | GET | `/domains` | List supported domains |
 | GET | `/gold_standard?url=` | Gold standard entry for a URL |
 | GET | `/full_gold_standard?domain=` | All GS entries for a domain |
@@ -155,5 +147,4 @@ Errors: `400` unsupported domain, `404` URL not in GS, `503` unreachable URL.
 - **Markdown stripping**: `strip_markdown()` in `src/lib/evaluation/tokens.py` removes markdown before scoring
 - **Evaluation groups**: `POST /evaluate` returns two groups — `token_level_eval` (precision/recall/F1, set-based) and `similarity_eval` (cosine/jaccard/excess_ratio, frequency-vector-based); schemas are `TokenLevelEval` and `SimilarityEval`
 - **Excess ratio**: fraction of extracted token occurrences not covered by gold (`1 − overlap/total_parsed`); lower is better — directly measures parser noise
-- **Page profiles**: WikipediaParser uses per-page `WikipediaSectionProfile` configs in `PAGE_PROFILES`
 - **Frozen dataclasses**: `TokenLevelMetrics`, `ContentMetrics`

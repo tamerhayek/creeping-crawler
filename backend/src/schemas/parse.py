@@ -16,5 +16,5 @@ class ParseResponse(BaseModel):
     url: str
     domain: str
     title: str
-    html_text: str    # raw markdown from the crawler
+    html_text: str    # raw HTML of the page
     parsed_text: str  # clean text produced by the domain-specific parser
