@@ -7,7 +7,8 @@ the page title, raw HTML, and converted markdown.
 import re
 from dataclasses import dataclass
 
-from crawl4ai import AsyncWebCrawler, CrawlerRunConfig
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
+from crawl4ai.async_configs import CacheMode
 
 from .configs.registry import config_for as _config_for
 
@@ -52,8 +53,11 @@ async def fetch_page(url: str) -> PageContent:
     Raises:
         RuntimeError: if Crawl4AI reports a failed crawl.
     """
-    async with AsyncWebCrawler() as crawler:
-        result = await crawler.arun(url=url, config=_config_for(url))
+    browser_cfg = BrowserConfig(headless=True)
+    run_cfg = _config_for(url)
+    run_cfg.cache_mode = CacheMode.BYPASS
+    async with AsyncWebCrawler(config=browser_cfg) as crawler:
+        result = await crawler.arun(url=url, config=run_cfg)
 
     if not result.success:
         raise RuntimeError(f"Crawl failed for {url}: {result.error_message}")
@@ -77,8 +81,11 @@ async def fetch_page_from_html(url: str, html_text: str) -> PageContent:
     Raises:
         RuntimeError: if Crawl4AI fails to process the HTML.
     """
-    async with AsyncWebCrawler() as crawler:
-        result = await crawler.arun(url=f"raw:{html_text}", config=_html_only_config(url))
+    browser_cfg = BrowserConfig(headless=True)
+    run_cfg = _html_only_config(url)
+    run_cfg.cache_mode = CacheMode.BYPASS
+    async with AsyncWebCrawler(config=browser_cfg) as crawler:
+        result = await crawler.arun(url=f"raw:{html_text}", config=run_cfg)
 
     if not result.success:
         raise RuntimeError(f"HTML processing failed: {result.error_message}")
