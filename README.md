@@ -70,7 +70,7 @@ backend/src/
 │   ├── domains.py            # DomainsResponse
 │   ├── parse.py              # ParseRequest, ParseResponse
 │   ├── evaluate.py           # EvaluateRequest, EvaluateResponse, TokenLevelEval, SimilarityEval
-│   └── gold.py               # GoldStandardResponse, FullGoldStandardResponse, GsUrlsResponse, GoldTextResponse
+│   └── gold.py               # GoldStandardResponse, FullGoldStandardResponse, GoldStandardUrlsResponse
 └── lib/                      # Core library (no FastAPI dependencies except utils)
     ├── utils.py              # domain_of, assert_supported_domain
     ├── crawling/
@@ -109,8 +109,7 @@ backend/src/
 | GET | `/gold_standard?url=` | Gold standard entry for a URL |
 | GET | `/full_gold_standard?domain=` | All GS entries for a domain |
 | POST | `/evaluate` | Score `{parsed_text, gold_text}` |
-| GET | `/gs_urls` | List all gold standard URLs |
-| GET | `/gold_text?url=` | Gold standard text (no crawl) |
+| GET | `/gold_standard_urls` | List all gold standard URLs |
 | GET | `/full_gs_eval?domain=` | Averaged scores across all GS entries for a domain |
 
 Errors: `400` unsupported domain · `404` URL not in GS · `503` unreachable URL.

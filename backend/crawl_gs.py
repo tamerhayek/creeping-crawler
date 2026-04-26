@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from crawl4ai import AsyncWebCrawler
 
-from src.lib.crawling.configs.registry import config_for
+from src.lib.crawling.domains.registry import config_for
 from src.lib.evaluation.tokens import strip_markdown
 from src.lib.parsers.registry import get_parser_for_url
 
