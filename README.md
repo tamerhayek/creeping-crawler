@@ -1,4 +1,4 @@
-# Crawl4AI Evaluation Framework
+# Creeping Crawler
 
 A Python tool that evaluates content extraction quality from web pages. It crawls URLs with Crawl4AI, parses the resulting markdown with URL-specific parsers, and scores extraction quality against gold standard samples using two evaluation groups: token-level (precision/recall/F1) and similarity (cosine/jaccard/excess ratio).
 
@@ -13,7 +13,7 @@ A Python tool that evaluates content extraction quality from web pages. It crawl
 make envs
 ```
 
-This creates two conda environments (`crawl4ai-backend` and `crawl4ai-frontend`) and installs all dependencies.
+This creates two conda environments (`creeping-crawler-backend` and `creeping-crawler-frontend`) and installs all dependencies.
 
 ## Running
 

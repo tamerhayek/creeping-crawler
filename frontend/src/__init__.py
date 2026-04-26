@@ -1,1 +1,1 @@
-"""Frontend package for the Crawl4AI Evaluation UI."""
+"""Frontend package for Creeping Crawler."""

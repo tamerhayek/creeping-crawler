@@ -20,14 +20,14 @@ tos:
 
 # Create the backend conda environment and install all dependencies.
 env-backend:
-	$(CONDA) create -n crawl4ai-backend python=3.11 -y
-	$(CONDA) run -n crawl4ai-backend pip install -r backend/requirements.txt
-	$(CONDA) run -n crawl4ai-backend python -m playwright install --with-deps chromium
+	$(CONDA) create -n creeping-crawler-backend python=3.11 -y
+	$(CONDA) run -n creeping-crawler-backend pip install -r backend/requirements.txt
+	$(CONDA) run -n creeping-crawler-backend python -m playwright install --with-deps chromium
 
 # Create the frontend conda environment and install all dependencies.
 env-frontend:
-	$(CONDA) create -n crawl4ai-frontend python=3.11 -y
-	$(CONDA) run -n crawl4ai-frontend pip install -r frontend/requirements.txt
+	$(CONDA) create -n creeping-crawler-frontend python=3.11 -y
+	$(CONDA) run -n creeping-crawler-frontend pip install -r frontend/requirements.txt
 
 # Create both environments in sequence.
 envs: env-backend env-frontend
@@ -36,12 +36,12 @@ envs: env-backend env-frontend
 
 # Reinstall backend packages into an already-existing environment.
 install-backend:
-	$(CONDA) run -n crawl4ai-backend pip install -r backend/requirements.txt
-	$(CONDA) run -n crawl4ai-backend python -m playwright install --with-deps chromium
+	$(CONDA) run -n creeping-crawler-backend pip install -r backend/requirements.txt
+	$(CONDA) run -n creeping-crawler-backend python -m playwright install --with-deps chromium
 
 # Reinstall frontend packages into an already-existing environment.
 install-frontend:
-	$(CONDA) run -n crawl4ai-frontend pip install -r frontend/requirements.txt
+	$(CONDA) run -n creeping-crawler-frontend pip install -r frontend/requirements.txt
 
 # Reinstall packages for both environments.
 install: install-backend install-frontend
@@ -50,11 +50,11 @@ install: install-backend install-frontend
 
 # Start the backend API server on port 8003.
 run-backend:
-	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend uvicorn src.server:app --host 0.0.0.0 --port 8003
+	cd backend && $(CONDA) run --no-capture-output -n creeping-crawler-backend uvicorn src.server:app --host 0.0.0.0 --port 8003
 
 # Start the frontend UI server on port 8004.
 run-frontend:
-	cd frontend && $(CONDA) run --no-capture-output -n crawl4ai-frontend uvicorn src.app:app --host 0.0.0.0 --port 8004
+	cd frontend && $(CONDA) run --no-capture-output -n creeping-crawler-frontend uvicorn src.app:app --host 0.0.0.0 --port 8004
 
 # ─── Crawl ───────────────────────────────────────────────────────────────────
 
@@ -62,7 +62,7 @@ run-frontend:
 # Pass args after --: make crawl -- --domain www.xe.com --update-json
 _CRAWL_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 crawl:
-	cd backend && $(CONDA) run --no-capture-output -n crawl4ai-backend python crawl_gs.py $(_CRAWL_ARGS)
+	cd backend && $(CONDA) run --no-capture-output -n creeping-crawler-backend python crawl_gs.py $(_CRAWL_ARGS)
 
 # Catch-all: silences the extra "targets" Make sees when args are passed via --
 %:
@@ -72,11 +72,11 @@ crawl:
 
 # Snapshot backend dependencies into backend/requirements.txt.
 freeze-backend:
-	$(CONDA) run -n crawl4ai-backend pip freeze | grep -v '@ file://' > backend/requirements.txt
+	$(CONDA) run -n creeping-crawler-backend pip freeze | grep -v '@ file://' > backend/requirements.txt
 
 # Snapshot frontend dependencies into frontend/requirements.txt.
 freeze-frontend:
-	$(CONDA) run -n crawl4ai-frontend pip freeze | grep -v '@ file://' > frontend/requirements.txt
+	$(CONDA) run -n creeping-crawler-frontend pip freeze | grep -v '@ file://' > frontend/requirements.txt
 
 # Snapshot dependencies for both environments.
 freeze: freeze-backend freeze-frontend
@@ -103,11 +103,11 @@ endif
 
 # Remove the backend conda environment.
 delete-backend:
-	$(CONDA) remove -n crawl4ai-backend --all -y
+	$(CONDA) remove -n creeping-crawler-backend --all -y
 
 # Remove the frontend conda environment.
 delete-frontend:
-	$(CONDA) remove -n crawl4ai-frontend --all -y
+	$(CONDA) remove -n creeping-crawler-frontend --all -y
 
 # Remove both conda environments.
 delete-envs: delete-backend delete-frontend

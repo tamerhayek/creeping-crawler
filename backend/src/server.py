@@ -8,7 +8,7 @@ from fastapi import FastAPI
 
 from .routes import domains_router, evaluate_router, gold_router, parse_router
 
-app = FastAPI(title="Crawl4AI Evaluation API")
+app = FastAPI(title="Creeping Crawler API")
 
 app.include_router(domains_router)
 app.include_router(parse_router)

@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .routes import compare_router, index_router
 
-app = FastAPI(title="Crawl4AI Eval Frontend")
+app = FastAPI(title="Creeping Crawler")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

@@ -1,4 +1,4 @@
-"""Pydantic request/response schemas for the Crawl4AI Evaluation API."""
+"""Pydantic request/response schemas for the Creeping Crawler API."""
 
 from .domains import DomainsResponse
 from .evaluate import EvaluateRequest, EvaluateResponse, SimilarityEval, TokenLevelEval

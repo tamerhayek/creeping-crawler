@@ -1,4 +1,4 @@
-"""Internal library for the Crawl4AI Evaluation API."""
+"""Internal library for Creeping Crawler."""
 
 from .crawling.crawler import fetch_page, fetch_page_from_html, fetch_page_for_url
 from .evaluation.similarity import calculate_content_metrics
