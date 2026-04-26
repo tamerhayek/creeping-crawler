@@ -2,7 +2,7 @@
 
 from .domains import DomainsResponse
 from .evaluate import EvaluateRequest, EvaluateResponse, SimilarityEval, TokenLevelEval
-from .gold import FullGoldStandardResponse, GoldStandardResponse, GoldTextResponse, GsUrlsResponse
+from .gold import FullGoldStandardResponse, GoldStandardResponse, GoldStandardUrlsResponse
 from .parse import ParseRequest, ParseResponse
 
 __all__ = [
@@ -12,8 +12,7 @@ __all__ = [
     "TokenLevelEval",
     "SimilarityEval",
     "GoldStandardResponse",
-    "GoldTextResponse",
-    "GsUrlsResponse",
+    "GoldStandardUrlsResponse",
     "FullGoldStandardResponse",
     "ParseRequest",
     "ParseResponse",

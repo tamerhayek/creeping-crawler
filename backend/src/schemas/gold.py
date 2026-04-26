@@ -19,14 +19,7 @@ class FullGoldStandardResponse(BaseModel):
     gold_standard: list[GoldStandardResponse]
 
 
-class GsUrlsResponse(BaseModel):
-    """Response for GET /gs_urls: list of all gold standard URLs."""
+class GoldStandardUrlsResponse(BaseModel):
+    """Response for GET /gold_standard_urls: list of all gold standard URLs."""
 
     urls: list[str]
-
-
-class GoldTextResponse(BaseModel):
-    """Response for GET /gold_text: gold text for a single URL."""
-
-    url: str
-    gold_text: str

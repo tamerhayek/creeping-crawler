@@ -22,7 +22,7 @@ def get_gs_urls() -> list[str]:
     Raises BackendUnavailable if the backend cannot be reached.
     """
     try:
-        return requests.get(f"{BACKEND}/gs_urls", timeout=5).json().get("urls", [])
+        return requests.get(f"{BACKEND}/gold_standard_urls", timeout=5).json().get("urls", [])
     except requests.exceptions.ConnectionError as e:
         raise BackendUnavailable() from e
 
@@ -52,7 +52,7 @@ def get_gold_text(url: str) -> str | None:
     Raises BackendUnavailable if the backend cannot be reached.
     """
     try:
-        resp = requests.get(f"{BACKEND}/gold_text", params={"url": url}, timeout=5)
+        resp = requests.get(f"{BACKEND}/gold_standard", params={"url": url}, timeout=5)
         if resp.status_code == 200:
             return resp.json()["gold_text"]
         return None

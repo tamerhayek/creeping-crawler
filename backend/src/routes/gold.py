@@ -8,13 +8,11 @@ from ..lib import (
     get_available_urls,
     get_entry_for_url,
     get_urls_for_domain,
-    load_gold_text,
 )
 from ..schemas import (
     FullGoldStandardResponse,
     GoldStandardResponse,
-    GoldTextResponse,
-    GsUrlsResponse,
+    GoldStandardUrlsResponse,
 )
 
 router = APIRouter()
@@ -53,17 +51,7 @@ def full_gold_standard(domain: str = Query(...)):
     return FullGoldStandardResponse(gold_standard=entries)
 
 
-@router.get("/gs_urls", response_model=GsUrlsResponse)
-def gs_urls():
+@router.get("/gold_standard_urls", response_model=GoldStandardUrlsResponse)
+def gold_standard_urls():
     """Return all URLs present in the gold standard."""
-    return GsUrlsResponse(urls=get_available_urls())
-
-
-@router.get("/gold_text", response_model=GoldTextResponse)
-def gold_text(url: str = Query(...)):
-    """Return the stored gold text for a URL without crawling the live page."""
-    assert_supported_domain(domain_of(url))
-    text = load_gold_text(url)
-    if text is None:
-        raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
-    return GoldTextResponse(url=url, gold_text=text)
+    return GoldStandardUrlsResponse(urls=get_available_urls())
