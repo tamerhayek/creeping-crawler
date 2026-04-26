@@ -10,8 +10,8 @@ CONFIG = CrawlerRunConfig(
         ".vector-header-container, #siteNotice, #p-search, #p-lang-btn, .vector-page-toolbar, #siteSub, "
         # Infobox / sinottico tables
         ".infobox, .sinottico, "
-        # Images captions
-        "figcaption, "
+        # Captions
+        "figcaption, .itwiki-template-citazione-footer, "
         # Actions button
         ".mw-highlight-copy-button, .mw-editsection"
         ),
