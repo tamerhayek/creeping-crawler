@@ -97,7 +97,7 @@ test:
 ifndef STUDENT_ID
 	$(error STUDENT_ID is not set. Usage: make test STUDENT_ID=<your_student_id>)
 endif
-	docker run --network host $(GRADER_TAG) $(STUDENT_ID)
+	docker run --rm --name creeping-crawler-grader --network host $(GRADER_TAG) $(STUDENT_ID)
 
 # ─── Cleanup ─────────────────────────────────────────────────────────────────
 
