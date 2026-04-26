@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Query
 
 from ..lib import (
     assert_supported_domain,
-    compute_similarity_eval,
-    compute_token_level_eval,
+    calculate_content_metrics,
+    calculate_token_level_metrics,
     fetch_page_for_url,
     get_parser_for_url,
     get_urls_for_domain,
@@ -21,9 +21,11 @@ router = APIRouter()
 @router.post("/evaluate", response_model=EvaluateResponse)
 def evaluate(body: EvaluateRequest):
     """Compute token-level and token-count evaluation metrics for a parsed/gold text pair."""
+    tl = calculate_token_level_metrics(body.parsed_text, body.gold_text)
+    sim = calculate_content_metrics(body.parsed_text, body.gold_text)
     return EvaluateResponse(
-        token_level_eval=compute_token_level_eval(body.parsed_text, body.gold_text),
-        similarity_eval=compute_similarity_eval(body.parsed_text, body.gold_text),
+        token_level_eval=TokenLevelEval(precision=tl.precision, recall=tl.recall, f1=tl.f1),
+        similarity_eval=SimilarityEval(cosine=sim.cosine, jaccard=sim.jaccard, excess_ratio=sim.excess_ratio),
     )
 
 
@@ -42,9 +44,11 @@ async def full_gs_eval(domain: str = Query(...)):
         except RuntimeError as e:
             raise HTTPException(status_code=503, detail=str(e))
         parsed_text = get_parser_for_url(url).parse(url, page.markdown_text)
+        tl = calculate_token_level_metrics(parsed_text, gold_text)
+        sim = calculate_content_metrics(parsed_text, gold_text)
         return (
-            compute_token_level_eval(parsed_text, gold_text),
-            compute_similarity_eval(parsed_text, gold_text),
+            TokenLevelEval(precision=tl.precision, recall=tl.recall, f1=tl.f1),
+            SimilarityEval(cosine=sim.cosine, jaccard=sim.jaccard, excess_ratio=sim.excess_ratio),
         )
 
     results = await asyncio.gather(*[_eval_url(url) for url in urls])

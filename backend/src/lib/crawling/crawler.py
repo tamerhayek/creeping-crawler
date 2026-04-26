@@ -10,7 +10,15 @@ from dataclasses import dataclass
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
 from crawl4ai.async_configs import CacheMode
 
-from .configs.registry import config_for as _config_for
+from ..gold_standard.gold import get_entry_for_url
+from .domains.registry import config_for as _domain_config
+
+_DEFAULT_CONFIG = CrawlerRunConfig(magic=True)
+
+
+def _config_for(url: str) -> CrawlerRunConfig:
+    """Return the domain-specific config, or the default magic config."""
+    return _domain_config(url) or _DEFAULT_CONFIG
 
 
 def _html_only_config(url: str) -> CrawlerRunConfig:
@@ -67,6 +75,16 @@ async def fetch_page(url: str) -> PageContent:
         html_text=result.html,
         markdown_text=result.markdown,
     )
+
+
+async def fetch_page_for_url(url: str) -> PageContent:
+    """Fetch a page using the stored HTML from the gold standard if available, else crawl live."""
+    entry = get_entry_for_url(url)
+    if entry and entry.get("html_text"):
+        page = await fetch_page_from_html(url, entry["html_text"])
+        if page.markdown_text:
+            return page
+    return await fetch_page(url)
 
 
 async def fetch_page_from_html(url: str, html_text: str) -> PageContent:

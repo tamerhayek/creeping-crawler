@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from .base import ContentParser
+from ..base import ContentParser
 
 
 class WikipediaParser(ContentParser):

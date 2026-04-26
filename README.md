@@ -56,6 +56,49 @@ make crawl -- --update-json                       # all domains + update html_te
 make crawl -- --domain www.xe.com --update-json   # single domain + update JSON
 ```
 
+## Project Structure
+
+```
+backend/src/
+├── server.py                 # FastAPI app entry point
+├── routes/                   # API route handlers
+│   ├── domains.py
+│   ├── parse.py
+│   ├── evaluate.py
+│   └── gold.py
+├── schemas/                  # Pydantic request/response models
+│   ├── domains.py            # DomainsResponse
+│   ├── parse.py              # ParseRequest, ParseResponse
+│   ├── evaluate.py           # EvaluateRequest, EvaluateResponse, TokenLevelEval, SimilarityEval
+│   └── gold.py               # GoldStandardResponse, FullGoldStandardResponse, GsUrlsResponse, GoldTextResponse
+└── lib/                      # Core library (no FastAPI dependencies except utils)
+    ├── utils.py              # domain_of, assert_supported_domain
+    ├── crawling/
+    │   ├── crawler.py        # fetch_page, fetch_page_from_html, fetch_page_for_url
+    │   └── domains/          # Domain-specific CrawlerRunConfig
+    │       ├── registry.py
+    │       ├── wikipedia.py
+    │       ├── espn.py
+    │       ├── cnbc.py
+    │       └── xe.py
+    ├── parsers/
+    │   ├── base.py           # ContentParser abstract class
+    │   ├── default.py        # PassThroughParser (fallback)
+    │   ├── registry.py       # URL → parser lookup
+    │   └── domains/          # Domain-specific parser implementations
+    │       ├── wikipedia.py
+    │       ├── espn.py
+    │       ├── cnbc.py
+    │       └── xe.py
+    ├── evaluation/
+    │   ├── tokens.py         # strip_markdown, extract_unique_tokens
+    │   ├── token_level.py    # Set-based metrics: precision, recall, F1
+    │   └── similarity.py     # Vector-based metrics: cosine, Jaccard, excess ratio
+    └── gold_standard/
+        ├── urls.py           # Domain/URL listing from gs_data/
+        └── gold.py           # Gold text lookup
+```
+
 ## REST API
 
 | Method | Path | Description |

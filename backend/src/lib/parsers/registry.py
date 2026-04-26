@@ -9,10 +9,7 @@ from urllib.parse import urlparse
 
 from .base import ContentParser
 from .default import PassThroughParser
-from .wikipedia import WikipediaParser
-from .cnbc import CnbcParser
-from .espn import EspnParser
-from .xe import XeParser
+from .domains import CnbcParser, EspnParser, WikipediaParser, XeParser
 
 DOMAIN_CONFIGS: dict[str, ContentParser] = {
     "it.wikipedia.org": WikipediaParser(),

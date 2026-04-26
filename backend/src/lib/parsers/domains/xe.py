@@ -4,7 +4,7 @@ Receives Crawl4AI markdown (filtered by CrawlerRunConfig) and returns it
 cleaned of any trailing boilerplate sections.
 """
 
-from .base import ContentParser
+from ..base import ContentParser
 
 
 class XeParser(ContentParser):

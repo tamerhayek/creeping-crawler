@@ -3,8 +3,8 @@
 from pydantic import BaseModel
 
 
-class GoldStandardEntry(BaseModel):
-    """A single gold standard entry: crawled content + manually curated gold text."""
+class GoldStandardResponse(BaseModel):
+    """Response for GET /gold_standard: crawled content + manually curated gold text."""
 
     url: str
     domain: str
@@ -16,7 +16,7 @@ class GoldStandardEntry(BaseModel):
 class FullGoldStandardResponse(BaseModel):
     """Response for GET /full_gold_standard: all entries for a domain."""
 
-    gold_standard: list[GoldStandardEntry]
+    gold_standard: list[GoldStandardResponse]
 
 
 class GsUrlsResponse(BaseModel):

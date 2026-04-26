@@ -7,7 +7,7 @@ the article body.
 
 import re
 
-from .base import ContentParser
+from ..base import ContentParser
 
 
 class EspnParser(ContentParser):
