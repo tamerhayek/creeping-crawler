@@ -36,9 +36,19 @@ def get_available_urls() -> list[str]:
     return sorted({e["url"] for e in get_all_entries()})
 
 
+def _domains_file() -> Path:
+    """Return the path to domains.json."""
+    # In Docker: WORKDIR /app, domains.json is copied there
+    docker_path = Path("/app/domains.json")
+    if docker_path.exists():
+        return docker_path
+    # Locally: gold_standard/ → lib/ → src/ → backend/ → project root
+    return Path(__file__).resolve().parents[4] / "domains.json"
+
+
 def get_domains() -> list[str]:
-    """Return a sorted list of all supported domains (netloc of GS URLs)."""
-    return sorted({urlparse(url).netloc for url in get_available_urls()})
+    """Return the list of supported domains from domains.json."""
+    return json.loads(_domains_file().read_text(encoding="utf-8"))["domains"]
 
 
 def is_supported_domain(domain: str) -> bool:
