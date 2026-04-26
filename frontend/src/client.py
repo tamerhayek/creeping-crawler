@@ -2,7 +2,7 @@
 
 All communication with the backend goes through this module.
 BACKEND_URL defaults to localhost:8003 and can be overridden via the
-BACKEND_URL environment variable (set in docker-compose.yml for Docker).
+BACKEND_URL environment variable (set in docker-compose.yaml for Docker).
 """
 
 import os
