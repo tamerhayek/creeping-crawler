@@ -30,6 +30,7 @@ class WikipediaParser(ContentParser):
         # Skip-navigation links: "[Vai al contenuto](...)", "[Salta a](...)"
         re.compile(r"^\[vai al\b", re.IGNORECASE),
         re.compile(r"^\[salta al?\b", re.IGNORECASE),
+        re.compile(r"^\[modifica?\b", re.IGNORECASE),
         # Lines that are only wiki-style image/file markup residues
         re.compile(r"^\s*!\["),
     )

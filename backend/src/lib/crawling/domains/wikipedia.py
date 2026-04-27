@@ -13,7 +13,7 @@ CONFIG = CrawlerRunConfig(
         # Captions
         "figcaption, .itwiki-template-citazione-footer, "
         # Actions button
-        ".mw-highlight-copy-button, .mw-editsection"
+        ".mw-highlight-copy-button, .mw-editsection, "
         # Others
         ".ambox, .metadata, .thumbcaption"
         ),
