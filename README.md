@@ -19,7 +19,7 @@ This creates two conda environments (`creeping-crawler-backend` and `creeping-cr
 
 **With Docker Compose (recommended):**
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
 **Without Docker (two terminals):**

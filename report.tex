@@ -36,32 +36,26 @@ Il progetto è suddiviso in due container Docker orchestrati da \texttt{docker-c
 \paragraph{Backend}
 
 \begin{itemize}
-  \item \textbf{\texttt{src/lib/crawling/}} — Modulo di acquisizione basato su Crawl4AI. \texttt{crawler.py} espone tre funzioni pubbliche: \texttt{fetch\_page} (crawl live), \texttt{fetch\_page\_from\_html} (parsing da HTML già disponibile via prefisso \texttt{raw:}), e \texttt{fetch\_page\_for\_url} (usa l'HTML salvato nel Gold Standard come sorgente primaria; ricade sul crawl live solo se non disponibile). Questa scelta è motivata dalla natura dinamica dei domini assegnati: siti come XE aggiornano frequentemente i dati sulle valute monetarie, per cui ricrawlare la pagina live avrebbe introdotto uno sfasamento rispetto al \texttt{gold\_text} costruito manualmente, inquinando la valutazione. La sottocartella \texttt{domains/} contiene un \texttt{CrawlerRunConfig} dedicato per ciascun dominio, con esclusione di tag, selettori CSS e form non pertinenti; \texttt{CacheMode.BYPASS} garantisce contenuto sempre aggiornato.
+  \item \textbf{\texttt{src/lib/crawling/}} — Modulo di acquisizione basato su Crawl4AI. \texttt{crawler.py} espone tre funzioni: \texttt{fetch\_page} (crawl live), \texttt{fetch\_page\_from\_html} (da HTML via prefisso \texttt{raw:}), e \texttt{fetch\_page\_for\_url} (usa l'HTML salvato nel Gold Standard come sorgente primaria, ricade sul crawl live solo se non disponibile). La sottocartella \texttt{domains/} contiene un \texttt{CrawlerRunConfig} per ciascun dominio con esclusione di tag e selettori CSS non pertinenti.
 
-  \item \textbf{\texttt{src/lib/parsers/}} — Interfaccia astratta \texttt{ContentParser} con implementazioni specifiche in \texttt{domains/} (Wikipedia, ESPN, CNBC, XE). Ogni parser opera sul Markdown prodotto da Crawl4AI: interrompe la raccolta alle sezioni boilerplate (es. ``Note'', ``Related Content''), rimuove pattern residui tramite espressioni regolari (note a piè di pagina, link di navigazione, didascalie), e restituisce testo pulito in formato Markdown.
+  \item \textbf{\texttt{src/lib/parsers/}} — Interfaccia astratta \texttt{ContentParser} con implementazioni per Wikipedia, ESPN, CNBC e XE. Ogni parser opera sul Markdown prodotto da Crawl4AI: interrompe la raccolta alle sezioni boilerplate e rimuove pattern residui tramite espressioni regolari.
 
-  \item \textbf{\texttt{src/lib/evaluation/}} — Pipeline di valutazione in tre moduli: \texttt{tokens.py} (stripping Markdown via mistune/BeautifulSoup, normalizzazione Unicode), \texttt{token\_level.py} (metriche set-based: precision, recall, F1), \texttt{similarity.py} (metriche vettoriali: cosine, Jaccard, excess ratio).
+  \item \textbf{\texttt{src/lib/evaluation/}} — Pipeline in tre moduli: \texttt{tokens.py} (stripping Markdown, normalizzazione Unicode), \texttt{token\_level.py} (precision, recall, F1), \texttt{similarity.py} (cosine, Jaccard, excess ratio).
 
-  \item \textbf{\texttt{src/lib/gold\_standard/}} — Accesso a \texttt{domains.json} e ai file JSON in \texttt{gs\_data/}, uno per dominio, ciascuno con le entry rappresentative contenenti \texttt{url}, \texttt{domain}, \texttt{title}, \texttt{html\_text} e \texttt{gold\_text}.
+  \item \textbf{\texttt{src/lib/gold\_standard/}} — Accesso ai file JSON in \texttt{gs\_data/}, uno per dominio, con le entry del Gold Standard.
 
-  \item \textbf{\texttt{src/routes/}} — Quattro router FastAPI (\texttt{domains}, \texttt{parse}, \texttt{gold}, \texttt{evaluate}), ciascuno con schemi Pydantic dedicati in \texttt{src/schemas/}.
+  \item \textbf{\texttt{src/routes/}} — Quattro router FastAPI (\texttt{domains}, \texttt{parse}, \texttt{gold}, \texttt{evaluate}) con schemi Pydantic in \texttt{src/schemas/}.
 \end{itemize}
 
 \paragraph{Frontend}
 
-Server FastAPI con rendering Jinja2, due route:
-
-\begin{itemize}
-  \item \textbf{\texttt{GET /}} — Home page: recupera dal backend la lista degli URL del Gold Standard tramite \texttt{/gold\_standard\_urls} e la espone come menù a tendina raggruppato per dominio (con \texttt{www.} rimosso). L'utente può selezionare un URL dal menù o inserirne uno arbitrario nel campo libero.
-
-  \item \textbf{\texttt{GET /compare?url=\textless{}url\textgreater{}}} — Pagina dei risultati: chiama \texttt{/parse} sul backend e produce il testo pulito via \texttt{strip\_markdown}. Se l'URL è nel Gold Standard, recupera anche \texttt{gold\_text} e calcola le metriche di valutazione. Visualizza quattro pannelli (HTML grezzo, Markdown parsato, testo pulito, Gold Standard) e, quando disponibile, un diff interattivo Monaco Editor tra testo estratto e Gold Standard.
-\end{itemize}
+Server FastAPI con rendering Jinja2. \textbf{\texttt{GET /}} espone il menù degli URL del Gold Standard raggruppati per dominio. \textbf{\texttt{GET /compare?url=}} chiama \texttt{/parse}, calcola le metriche se l'URL è nel Gold Standard, e mostra i pannelli di testo con diff interattivo Monaco Editor.
 
 % ─── 3. Valutazione Parser ───────────────────────────────────────────────────
 
 \section{Valutazione dei Parser}
 
-\paragraph{Metodologia.} Ogni parser viene valutato su 5 URL per dominio tramite \texttt{GET /full\_gs\_eval}. Il testo estratto e il Gold Standard vengono entrambi passati per \texttt{strip\_markdown} prima del confronto, in modo da normalizzare quote tipografiche, trattini Unicode ed entità HTML. Le metriche set-based operano su insiemi di token unici (case-sensitive, separazione per spazio); le metriche vettoriali (cosine, Jaccard, excess ratio) operano sui conteggi di frequenza tramite \texttt{Counter}.
+\paragraph{Metodologia.} Ogni parser viene valutato su 10 URL per dominio tramite \texttt{GET /full\_gs\_eval}. Il testo estratto viene passato per \texttt{strip\_markdown} prima del confronto, in modo da normalizzare quote tipografiche, trattini Unicode ed entità HTML. Le metriche set-based operano su insiemi di token unici (case-sensitive, separazione per spazio); le metriche vettoriali (cosine, Jaccard, excess ratio) operano sui conteggi di frequenza tramite \texttt{Counter}.
 
 \paragraph{Risultati.} Le tabelle seguenti riportano i valori medi su tutto il Gold Standard per ciascun dominio (ottenuti via \texttt{GET /full\_gs\_eval?domain=<dominio>}).
 
@@ -97,20 +91,18 @@ www.xe.com        & 0.9984 & 0.9852 & 0.0065 \\
 \caption{Similarity Eval — metriche vettoriali medie per dominio (Excess Ratio: più basso è meglio).}
 \end{table}
 
-\paragraph{Considerazioni qualitative.} La configurazione di Crawl4AI tramite \texttt{CrawlerRunConfig} (esclusione di selettori CSS specifici per dominio) è il primo livello di filtro. Il parser Python agisce sul Markdown residuo: per Wikipedia, le sezioni di servizio (``Note'', ``Bibliografia'', ``Voci correlate'') vengono interrotte con precisione; per ESPN e CNBC i pattern regex rimuovono promozioni video, link isolati e didascalie; per XE il contenuto strutturato è già quasi privo di rumore dopo la configurazione. Il confronto visuale tramite Monaco Diff Editor nel frontend ha guidato il tuning iterativo dei pattern di esclusione.
-
-\paragraph{Nota su \texttt{www.cnbc.com} — fallback GET.} Le pagine di CNBC producono HTML particolarmente pesanti (fino a diversi MB). Poiché il corpo della richiesta \texttt{POST /parse} non può superare un limite di dimensione, il frontend ricade automaticamente su \texttt{GET /parse?url=} quando l'\texttt{html\_text} supera tale soglia: in questo caso la pagina viene ri-scaricata live anziché riprocessata dall'HTML in cache. Questo comportamento è atteso e intenzionale; durante i test sul dominio CNBC compariranno pertanto dei \textbf{warning} che segnalano l'utilizzo del fallback GET.
+\paragraph{Nota su \texttt{www.cnbc.com} — fallback GET.} Le pagine di CNBC producono HTML particolarmente pesanti (fino a diversi MB). Poiché il corpo della richiesta \texttt{POST /parse} non può superare un limite di dimensione, il test ricade automaticamente su \texttt{GET /parse?url=} quando l'\texttt{html\_text} supera tale soglia. Durante i test sul dominio CNBC compariranno pertanto dei \textbf{warning} che segnalano l'utilizzo del fallback GET.
 
 % ─── 4. Bonus/Extra ──────────────────────────────────────────────────────────
 
 \section*{Bonus/Extra}
 
-\paragraph{Similarity Eval (metriche aggiuntive).} Oltre alla \texttt{token\_level\_eval} obbligatoria, è stato implementato un secondo gruppo di metriche basato su vettori di frequenza (\texttt{Counter}): \emph{cosine similarity}, che confronta la distribuzione di frequenza dei token tramite prodotto scalare normalizzato ed è alta anche in presenza di testo extra; \emph{Jaccard similarity}, calcolata sull'intersezione e unione dei multiset e penalizza sia token aggiuntivi che mancanti; ed \emph{excess ratio}, che misura la frazione di token estratti non coperti dal Gold Standard confrontando le frequenze dei token del testo parsato con quelle del Gold Standard (più bassa è meglio). Insieme a precision/recall/F1 forniscono una valutazione complementare: la cosine cattura la somiglianza globale di distribuzione, Jaccard penalizza le discrepanze in entrambe le direzioni, e l'excess ratio segnala specificamente contenuto estratto in eccesso.
+\paragraph{Similarity Eval (metriche aggiuntive).} Oltre alla \texttt{token\_level\_eval} obbligatoria, è stato implementato un secondo gruppo di metriche su vettori di frequenza (\texttt{Counter}): \emph{cosine similarity} (somiglianza di distribuzione, alta anche con testo extra), \emph{Jaccard similarity} (penalizza sia token aggiuntivi che mancanti), ed \emph{excess ratio} (frazione di token estratti non coperti dal Gold Standard; lower is better). Completano la valutazione set-based rilevando contenuto ridondante non catturato da precision/recall.
 
-\paragraph{Script \texttt{crawl\_gs.py} e \texttt{Makefile}.} Uno script autonomo scarica tutti gli URL del Gold Standard e salva l'output strutturato in \texttt{gs\_results/} in cinque formati: HTML grezzo e ripulito, Markdown, testo stripped e testo parsato. L'opzione \texttt{--update-json} aggiorna automaticamente il campo \texttt{html\_text} nei file JSON del Gold Standard per permettere il re-parsing offline senza ricrawlare. Il Makefile automatizza l'intero ciclo di sviluppo: creazione degli ambienti conda, installazione dipendenze (incluso Playwright/Chromium), avvio dei server, crawling, snapshot dei requirements e pulizia degli ambienti.
+\paragraph{Script \texttt{crawl\_gs.py} e \texttt{Makefile}.} Uno script autonomo scarica tutti gli URL del Gold Standard e salva l'output in \texttt{gs\_results/} (ignorata da git) in più formati (HTML, Markdown, testo stripped e parsato). L'\texttt{--update-json} aggiorna il campo \texttt{html\_text} nei JSON del Gold Standard per il re-parsing offline. Il Makefile automatizza creazione ambienti, installazione dipendenze, avvio server e crawling.
 
-\paragraph{Monaco Diff Editor.} La pagina dei risultati del frontend integra Monaco Editor (la stessa base di VS Code) in modalità diff affiancato. Quando l'URL è nel Gold Standard, il pannello mostra token per token la differenza tra il testo pulito estratto dal parser e il Gold Standard, evidenziando esattamente cosa è stato aggiunto o mancato. Questo ha reso il tuning dei parser molto più rapido rispetto al confronto manuale su file di testo.
+\paragraph{Monaco Diff Editor.} La pagina dei risultati integra Monaco Editor in modalità diff affiancato, mostrando le differenze tra testo estratto e Gold Standard e guidando il tuning iterativo dei parser.
 
-\paragraph{Endpoint aggiuntivi.} Oltre agli endpoint obbligatori è stato implementato \texttt{GET /gold\_standard\_urls}, che restituisce la lista completa degli URL nel Gold Standard ed è usato dal frontend per popolare il menù a tendina e determinare se un URL inserito manualmente ammette valutazione.
+\paragraph{Endpoint aggiuntivi.} \texttt{GET /gold\_standard\_urls} restituisce la lista completa degli URL del Gold Standard, usata dal frontend per il menù a tendina e per determinare se un URL ammette valutazione.
 
 \end{document}
