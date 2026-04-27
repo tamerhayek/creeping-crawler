@@ -83,6 +83,8 @@ www.xe.com        & 0.9916 & 0.9935 & 0.9925 & 0.9984 & 0.9852 & 0.0065 \\
 
 \paragraph{Qualitative considerations.} The Crawl4AI configuration via \texttt{CrawlerRunConfig} (domain-specific CSS selector exclusion) is the first filtering layer. The Python parser then acts on the residual Markdown: for Wikipedia, service sections (``Notes'', ``Bibliography'', ``See also'') are cleanly cut off; for ESPN and CNBC, regex patterns remove video promotions, isolated links, and captions; for XE, the structured content is already nearly noise-free after configuration. The visual diff in the Monaco Diff Editor in the frontend guided iterative tuning of the exclusion patterns.
 
+\paragraph{Note on \texttt{www.cnbc.com} — GET fallback.} CNBC pages produce particularly large HTML payloads (up to several MB). Since the \texttt{POST /parse} request body cannot exceed a size limit, the frontend automatically falls back to \texttt{GET /parse?url=} when the \texttt{html\_text} exceeds that threshold: in this case the page is re-fetched live rather than re-processed from the cached HTML. This behaviour is expected and intentional; during tests on the CNBC domain \textbf{warnings} will appear signalling the use of the GET fallback.
+
 % ─── 4. Bonus/Extra ──────────────────────────────────────────────────────────
 
 \section*{Bonus/Extra}
