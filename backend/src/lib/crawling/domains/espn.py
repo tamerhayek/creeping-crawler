@@ -20,10 +20,12 @@ CONFIG = CrawlerRunConfig(
         # Inline aside elements (photo, video promo, editorial box)
         "aside.inline, aside.inline-photo, aside.inline-track, "
         "aside.editorial, aside.float-r, "
-        # Article footer and legal
+        # Article footer
         ".article-footer, .article-legal-footer, "
-        ".foot-content, "
+        ".foot-content, .page-select, .controls, "
         "#footer, "
+        # Stats
+        ".StatsTable__Filters, "
         # Cookie consent (OneTrust)
         ".ot-sdk-container, #onetrust-consent-sdk, "
         "#onetrust-button-group-parent, .ot-cat-grp, "

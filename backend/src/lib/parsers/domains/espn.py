@@ -11,11 +11,14 @@ from ..base import ContentParser
 
 
 class EspnParser(ContentParser):
-    """Parser for ESPN articles.
+    """Parser for ESPN pages.
 
     CrawlerRunConfig handles nav/footer/sidebar/ad removal.
     This parser stops at known boilerplate section headings and strips
     residual boilerplate lines that can leak through markdown conversion.
+
+    For player stats pages (/player/stats/) content is collected starting
+    from the "Stats" heading; all other pages collect from the top.
     """
 
     # Heading-level section names that signal end of editorial content.
@@ -59,6 +62,8 @@ class EspnParser(ContentParser):
         re.compile(r"follow us on", re.IGNORECASE),
         # Photo caption prefix (caption appears as standalone italic line)
         re.compile(r"^\s*\*[^*]+\*\s*$"),
+        # Web font observer test string injected by ESPN's font loader
+        re.compile(r"^BESbswy", re.IGNORECASE),
     )
 
     # Regex to detect the start of the stats section on player stats pages.
@@ -66,45 +71,17 @@ class EspnParser(ContentParser):
 
     def parse(self, url: str, markdown: str) -> str:
         """Return cleaned Crawl4AI markdown for ESPN pages."""
-        if "/player/stats/" in url:
-            return self._parse_stats_page(markdown)
-        return self._parse_article(markdown)
-
-    def _parse_stats_page(self, markdown: str) -> str:
-        """Extract only the stats tables and glossary from a player stats page."""
-        lines = markdown.split("\n")
+        stats_page = "/player/stats/" in url
         collected: list[str] = []
-        in_stats = False
+        in_content = not stats_page  # stats pages: wait for the Stats heading
 
-        for line in lines:
-            if not in_stats:
+        for line in markdown.split("\n"):
+            if not in_content:
                 if self._STATS_HEADING.match(line):
-                    in_stats = True
+                    in_content = True
                     collected.append("Stats")
                 continue
 
-            # Stop at footer/legal lines.
-            if any(pat.search(line) for pat in self._FOOTER_PATTERNS):
-                break
-
-            # Stop at post-stats boilerplate headings.
-            if line.startswith("#"):
-                heading = line.lstrip("#").strip().lower()
-                if any(heading == s or heading.startswith(s) for s in self.EXCLUDED_SECTIONS):
-                    break
-
-            collected.append(line)
-
-        while collected and not collected[-1].strip():
-            collected.pop()
-
-        return "\n".join(collected)
-
-    def _parse_article(self, markdown: str) -> str:
-        """Extract editorial content from an ESPN article page."""
-        collected: list[str] = []
-
-        for line in markdown.split("\n"):
             # Stop at footer/legal lines.
             if any(pat.search(line) for pat in self._FOOTER_PATTERNS):
                 break
