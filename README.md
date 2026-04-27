@@ -144,6 +144,30 @@ Operates on token frequency vectors (Counter), more sensitive to repeated terms 
 
 ---
 
+## Evaluation Results
+
+Average scores across all gold standard URLs per domain (`/full_gs_eval`).
+
+### Token Level Eval
+
+| Domain | Precision | Recall | F1 |
+|--------|-----------|--------|----|
+| it.wikipedia.org | 0.9838 | 0.9778 | 0.9808 |
+| www.cnbc.com | 0.9988 | 0.9999 | 0.9993 |
+| www.espn.com | 0.9993 | 0.9981 | 0.9987 |
+| www.xe.com | 0.9916 | 0.9935 | 0.9925 |
+
+### Similarity Eval
+
+| Domain | Cosine | Jaccard | Excess Ratio |
+|--------|--------|---------|--------------|
+| it.wikipedia.org | 0.9949 | 0.9628 | 0.0116 |
+| www.cnbc.com | 1.0000 | 0.9987 | 0.0006 |
+| www.espn.com | 0.9802 | 0.9974 | 0.0185 |
+| www.xe.com | 0.9984 | 0.9852 | 0.0065 |
+
+---
+
 ## Grader — Lab Exam 1
 
 Computer Engineering Laboratory — A.Y. 2025/2026
