@@ -56,8 +56,8 @@ class WikipediaParser(ContentParser):
             if any(pat.search(line) for pat in self._SKIP_PATTERNS):
                 continue
 
-            line = self._LINK_RE.sub(r"\1", line)
             line = self._FOOTNOTE_RE.sub("", line)
+            line = self._LINK_RE.sub(r"\1", line)
             line = re.sub(r'\s+([,;:])', r'\1', line)
 
             # Drop image residue that substitutions may have exposed.
