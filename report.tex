@@ -63,22 +63,38 @@ Server FastAPI con rendering Jinja2, due route:
 
 \paragraph{Metodologia.} Ogni parser viene valutato su 5 URL per dominio tramite \texttt{GET /full\_gs\_eval}. Il testo estratto e il Gold Standard vengono entrambi passati per \texttt{strip\_markdown} prima del confronto, in modo da normalizzare quote tipografiche, trattini Unicode ed entità HTML. Le metriche set-based operano su insiemi di token unici (case-sensitive, separazione per spazio); le metriche vettoriali (cosine, Jaccard, excess ratio) operano sui conteggi di frequenza tramite \texttt{Counter}.
 
-\paragraph{Risultati.} La tabella seguente riporta i valori medi su tutto il Gold Standard per ciascun dominio (ottenuti via \texttt{GET /full\_gs\_eval?domain=<dominio>}).
+\paragraph{Risultati.} Le tabelle seguenti riportano i valori medi su tutto il Gold Standard per ciascun dominio (ottenuti via \texttt{GET /full\_gs\_eval?domain=<dominio>}).
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Dominio} & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{Cos} & \textbf{Jac} & \textbf{ExR}\\
+\textbf{Dominio} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
 \midrule
-it.wikipedia.org  & 0.9838 & 0.9778 & 0.9808 & 0.9949 & 0.9628 & 0.0116 \\
-www.espn.com      & 0.9993 & 0.9981 & 0.9987 & 0.9802 & 0.9974 & 0.0185 \\
-www.cnbc.com      & 0.9988 & 0.9999 & 0.9993 & 1.0000 & 0.9987 & 0.0006 \\
-www.xe.com        & 0.9916 & 0.9935 & 0.9925 & 0.9984 & 0.9852 & 0.0065 \\
+it.wikipedia.org  & 0.9838 & 0.9778 & 0.9808 \\
+www.espn.com      & 0.9993 & 0.9981 & 0.9987 \\
+www.cnbc.com      & 0.9988 & 0.9999 & 0.9993 \\
+www.xe.com        & 0.9916 & 0.9935 & 0.9925 \\
 \bottomrule
 \end{tabular}
-\caption{Metriche medie per dominio (P=Precision, R=Recall, F1, Cos=Cosine, Jac=Jaccard, ExR=Excess Ratio).}
+\caption{Token Level Eval — metriche set-based medie per dominio.}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Dominio} & \textbf{Cosine} & \textbf{Jaccard} & \textbf{Excess Ratio}\\
+\midrule
+it.wikipedia.org  & 0.9949 & 0.9628 & 0.0116 \\
+www.espn.com      & 0.9802 & 0.9974 & 0.0185 \\
+www.cnbc.com      & 1.0000 & 0.9987 & 0.0006 \\
+www.xe.com        & 0.9984 & 0.9852 & 0.0065 \\
+\bottomrule
+\end{tabular}
+\caption{Similarity Eval — metriche vettoriali medie per dominio (Excess Ratio: più basso è meglio).}
 \end{table}
 
 \paragraph{Considerazioni qualitative.} La configurazione di Crawl4AI tramite \texttt{CrawlerRunConfig} (esclusione di selettori CSS specifici per dominio) è il primo livello di filtro. Il parser Python agisce sul Markdown residuo: per Wikipedia, le sezioni di servizio (``Note'', ``Bibliografia'', ``Voci correlate'') vengono interrotte con precisione; per ESPN e CNBC i pattern regex rimuovono promozioni video, link isolati e didascalie; per XE il contenuto strutturato è già quasi privo di rumore dopo la configurazione. Il confronto visuale tramite Monaco Diff Editor nel frontend ha guidato il tuning iterativo dei pattern di esclusione.
@@ -89,7 +105,7 @@ www.xe.com        & 0.9916 & 0.9935 & 0.9925 & 0.9984 & 0.9852 & 0.0065 \\
 
 \section*{Bonus/Extra}
 
-\paragraph{Similarity Eval (metriche aggiuntive).} Oltre alla \texttt{token\_level\_eval} obbligatoria, è stato implementato un secondo gruppo di metriche basato su vettori di frequenza: \emph{cosine similarity} (misura la distribuzione dei token), \emph{Jaccard similarity} (penalizza sia token extra che mancanti), ed \emph{excess ratio} (frazione dei token estratti non coperti dal Gold Standard, più basso è meglio). Questi valori completano la valutazione set-based rilevando testo ridondante non catturato da precision/recall.
+\paragraph{Similarity Eval (metriche aggiuntive).} Oltre alla \texttt{token\_level\_eval} obbligatoria, è stato implementato un secondo gruppo di metriche basato su vettori di frequenza (\texttt{Counter}): \emph{cosine similarity}, che confronta la distribuzione di frequenza dei token tramite prodotto scalare normalizzato ed è alta anche in presenza di testo extra; \emph{Jaccard similarity}, calcolata sull'intersezione e unione dei multiset e penalizza sia token aggiuntivi che mancanti; ed \emph{excess ratio}, che misura la frazione di token estratti non coperti dal Gold Standard confrontando le frequenze dei token del testo parsato con quelle del Gold Standard (più bassa è meglio). Insieme a precision/recall/F1 forniscono una valutazione complementare: la cosine cattura la somiglianza globale di distribuzione, Jaccard penalizza le discrepanze in entrambe le direzioni, e l'excess ratio segnala specificamente contenuto estratto in eccesso.
 
 \paragraph{Script \texttt{crawl\_gs.py} e \texttt{Makefile}.} Uno script autonomo scarica tutti gli URL del Gold Standard e salva l'output strutturato in \texttt{gs\_results/} in cinque formati: HTML grezzo e ripulito, Markdown, testo stripped e testo parsato. L'opzione \texttt{--update-json} aggiorna automaticamente il campo \texttt{html\_text} nei file JSON del Gold Standard per permettere il re-parsing offline senza ricrawlare. Il Makefile automatizza l'intero ciclo di sviluppo: creazione degli ambienti conda, installazione dipendenze (incluso Playwright/Chromium), avvio dei server, crawling, snapshot dei requirements e pulizia degli ambienti.
 
