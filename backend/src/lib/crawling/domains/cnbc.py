@@ -37,7 +37,7 @@ CONFIG = CrawlerRunConfig(
         "[class*='InlineImage-imageEmbed'], "
         # Stock ticker / related quotes widget and inline ticker buttons
         ".RelatedQuotes-relatedQuotes, "
-        "[class*='QuoteInBody-inlineButton'], "
+        ".QuoteInBody-inlineButton, "
         # "Choose CNBC as your preferred source" banner
         "[class*='googlePreferredSourceContainer'], "
         # Special-report topic navigation
@@ -47,11 +47,14 @@ CONFIG = CrawlerRunConfig(
         "[id*='RelatedStories'], "
         "[id*='RelatedVideo'], "
         "[class*='RelatedContent-styles-makeit-relatedContent'], "
+        ".RelatedContent-relatedContent, "
         # Social
         ".social-buttons-transporter, "
         # Transporter / recommended-articles sections
         "[class*='TransporterSection'], "
         "[class*='SectionWrapper'], "
+        # Stock data
+        ".Collapsible-proliveCollapsableContainer, .InteractiveChart-container, .InteractiveChart-caption, "
         # Global footer
         "#GlobalFooter, [class*='CNBCFooter'], [class*='MakeItFooter-styles-makeit-container']"
     ),

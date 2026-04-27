@@ -35,9 +35,9 @@ class CnbcParser(ContentParser):
     # everything from that paragraph to the end of the article is removed.
     # Note: bold markdown prefix (**) is included since CNBC renders these as bold.
     _TRAILING_CUTOFF_PATTERNS: tuple[re.Pattern, ...] = (
-        # All "Want to …?" course/newsletter CTAs (bold or plain)
-        # e.g. "**Want to get ahead at work?**", "**Want to improve your communication…**"
-        re.compile(r"^\*{0,2}\s*Want to\b", re.IGNORECASE),
+        # All "Want to …?" course/newsletter CTAs (bold, italic, or plain)
+        # e.g. "**Want to get ahead at work?**", "_Want to improve your communication…"
+        re.compile(r"^[*_]*\s*Want to\b", re.IGNORECASE),
     )
 
     # Regex patterns for non-editorial lines to drop outright.
@@ -56,6 +56,8 @@ class CnbcParser(ContentParser):
         re.compile(r"^read (more|also)\s*:", re.IGNORECASE),
         # "WATCH: [link]" inline video promos (bold or plain)
         re.compile(r"^\**\s*WATCH\s*:\**", re.IGNORECASE),
+        # "[Sign up](url) for our weekly newsletter…" inline CTA
+        re.compile(r"^\[Sign up\]\(", re.IGNORECASE),
         # "CNBC's new online course" promotional lines (fallback for multi-line CTAs)
         re.compile(r"cnbc[''']s new online course", re.IGNORECASE),
     )
@@ -73,6 +75,9 @@ class CnbcParser(ContentParser):
 
                 # Remove bold/italic markers wrapping only whitespace (e.g. "** **")
             line = re.sub(r'\*{1,3}\s*\*{1,3}', '', line)
+            # Normalize spaces before punctuation left by stripped inline markers
+            # e.g. "**Airbnb supplies** :" → "Airbnb supplies :" → "Airbnb supplies:"
+            line = re.sub(r'\s+([,;:])', r'\1', line)
 
             # Drop residual boilerplate lines.
             if any(pat.search(line) for pat in self._SKIP_PATTERNS):
@@ -84,20 +89,15 @@ class CnbcParser(ContentParser):
         while collected and not collected[-1].strip():
             collected.pop()
 
-        # Remove any trailing paragraph that begins with a cutoff pattern.
-        # Walk backwards over non-blank lines to find the paragraph start.
-        i = len(collected) - 1
-        while i >= 0 and not collected[i].strip():
-            i -= 1
-        # Find the first line of that paragraph.
-        while i > 0 and collected[i - 1].strip():
-            i -= 1
-        if i >= 0 and any(
-            pat.match(collected[i]) for pat in self._TRAILING_CUTOFF_PATTERNS
-        ):
-            # Also remove any blank lines that precede the paragraph.
-            while i > 0 and not collected[i - 1].strip():
-                i -= 1
-            collected = collected[:i]
+        # Remove the first line (from the end) that matches a cutoff pattern,
+        # plus everything after it. Scans line by line so adjacent non-blank
+        # lines don't hide the match inside a larger "paragraph".
+        for i in range(len(collected) - 1, -1, -1):
+            if any(pat.match(collected[i]) for pat in self._TRAILING_CUTOFF_PATTERNS):
+                # Drop preceding blank lines too.
+                while i > 0 and not collected[i - 1].strip():
+                    i -= 1
+                collected = collected[:i]
+                break
 
         return "\n".join(collected)
