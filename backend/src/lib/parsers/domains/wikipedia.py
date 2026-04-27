@@ -38,10 +38,10 @@ class WikipediaParser(ContentParser):
     # Limited to 1-3 digit numbers to avoid stripping year links like [1912].
     _FOOTNOTE_RE = re.compile(r"\[(?:\d{1,3}|N\s*\d+)\]")
 
-    # Protocol-relative markdown links that Crawl4AI emits for internal Wikipedia
-    # links: [testo](//it.wikipedia.org/wiki/X "X") → keep only link text.
-    # \S* handles URLs with parentheses e.g. /wiki/Ontologia_(informatica).
-    _PROTO_REL_LINK_RE = re.compile(r'\[([^\]]*)\]\(//\S*(?:\s+"[^"]*")?\)')
+    # Any markdown link → keep only the link text.
+    # Supports one level of nested parentheses in URLs/titles
+    # e.g. [Foo](/wiki/Foo_(bar) "Foo (bar)") → "Foo"
+    _LINK_RE = re.compile(r'\[([^\]]*)\]\((?:[^()]*|\([^()]*\))*\)')
 
     def parse(self, url: str, markdown: str) -> str:
         """Remove non-informative sections and boilerplate from Crawl4AI markdown."""
@@ -56,8 +56,9 @@ class WikipediaParser(ContentParser):
             if any(pat.search(line) for pat in self._SKIP_PATTERNS):
                 continue
 
-            line = self._PROTO_REL_LINK_RE.sub(r"\1", line)
+            line = self._LINK_RE.sub(r"\1", line)
             line = self._FOOTNOTE_RE.sub("", line)
+            line = re.sub(r'\s+([,;:])', r'\1', line)
 
             # Drop image residue that substitutions may have exposed.
             if re.match(r"^\s*!\[", line):
