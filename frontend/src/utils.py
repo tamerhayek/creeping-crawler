@@ -7,7 +7,7 @@ import mistune
 from bs4 import BeautifulSoup
 
 
-_QUOTE_TABLE = str.maketrans({
+QUOTE_TABLE = str.maketrans({
     '\u2018': "'",   # left single quotation mark
     '\u2019': "'",   # right single quotation mark / apostrophe
     '\u201c': '"',   # left double quotation mark
@@ -23,7 +23,7 @@ def strip_markdown(text: str) -> str:
     Normalises unicode typographic quotes and dashes to ASCII equivalents
     so the diff view is not polluted by quote-style differences.
     """
-    text = text.translate(_QUOTE_TABLE)
+    text = text.translate(QUOTE_TABLE)
     html = mistune.html(text)
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup.find_all(True):

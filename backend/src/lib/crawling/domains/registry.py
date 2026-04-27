@@ -19,7 +19,7 @@ DOMAIN_CONFIGS: dict[str, CrawlerRunConfig] = {
 }
 
 
-def config_for(url: str) -> CrawlerRunConfig:
+def config_for(url: str) -> CrawlerRunConfig | None:
     """Return the domain-specific crawler config, or None for unknown domains.
 
     Falls back to the default config defined in crawler.py.

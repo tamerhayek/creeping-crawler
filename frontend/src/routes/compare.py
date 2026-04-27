@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..client import BackendUnavailable, evaluate, get_gold_text, get_gs_urls, parse_url
 from ..templates import templates
-from ..utils import _QUOTE_TABLE, strip_markdown
+from ..utils import QUOTE_TABLE, strip_markdown
 
 router = APIRouter()
 
@@ -37,7 +37,7 @@ def compare(request: Request, url: str = ""):
         if not error and url in gs_urls:
             gold_text = get_gold_text(url)
             if gold_text:
-                data["gold_text"] = gold_text.translate(_QUOTE_TABLE)
+                data["gold_text"] = gold_text.translate(QUOTE_TABLE)
                 metrics = evaluate(data["cleaned_text"], gold_text)
                 if metrics:
                     data["metrics"] = metrics

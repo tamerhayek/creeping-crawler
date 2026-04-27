@@ -33,7 +33,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from crawl4ai import AsyncWebCrawler
 
+from crawl4ai import CrawlerRunConfig
+from crawl4ai.async_configs import CacheMode
+
 from src.lib.crawling.domains.registry import config_for
+
+_DEFAULT_CONFIG = CrawlerRunConfig(magic=True, cache_mode=CacheMode.BYPASS)
 from src.lib.evaluation.tokens import strip_markdown
 from src.lib.parsers.registry import get_parser_for_url
 
@@ -91,7 +96,7 @@ async def crawl_all(update_json: bool = False, domain: str | None = None):
         for url in urls:
             print(f"Crawling: {url}")
             try:
-                result = await crawler.arun(url=url, config=config_for(url))
+                result = await crawler.arun(url=url, config=config_for(url) or _DEFAULT_CONFIG)
             except Exception as e:
                 print(f"  ERROR: {e}")
                 continue
