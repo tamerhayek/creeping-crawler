@@ -36,6 +36,10 @@ class EspnParser(ContentParser):
         re.compile(r"^\**\s*(WATCH|READ)\s*:\**", re.IGNORECASE),
         # Lines that are only a markdown link (related articles, topic tags)
         re.compile(r"^\s*\[[^\]]+\]\([^)]+\)\s*$"),
+        # List-item lines whose only content is a link, optionally wrapped in
+        # bold markers (**).  ESPN injects related-article promo blocks in the
+        # form:  **-[Title](url)  /  - [Title](url)**  /  **-[Title](url)**
+        re.compile(r"^\s*\**-\s*(?:[^\[\n]*:\s*)?\[[^\]]+\]\([^)]+\)\**\s*$"),
         # Social / follow lines
         re.compile(r"follow us on", re.IGNORECASE),
         # Photo caption prefix (caption appears as standalone italic line)

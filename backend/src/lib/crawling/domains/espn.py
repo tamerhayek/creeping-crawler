@@ -22,6 +22,8 @@ CONFIG = CrawlerRunConfig(
         "aside.editorial, aside.float-r, "
         # Article footer and legal
         ".article-footer, .article-legal-footer, "
+        ".foot-content, "
+        "#footer, "
         # Cookie consent (OneTrust)
         ".ot-sdk-container, #onetrust-consent-sdk, "
         "#onetrust-button-group-parent, .ot-cat-grp, "
