@@ -3,7 +3,6 @@
 \usepackage[final]{acl}
 
 \usepackage{times}
-\usepackage{latexsym}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
@@ -50,10 +49,12 @@ Il progetto è suddiviso in due container Docker orchestrati da \texttt{docker-c
 
 \paragraph{Frontend}
 
+Server FastAPI con rendering Jinja2, due route:
+
 \begin{itemize}
+  \item \textbf{\texttt{GET /}} — Home page: recupera dal backend la lista degli URL del Gold Standard tramite \texttt{/gold\_standard\_urls} e la espone come menù a tendina raggruppato per dominio (con \texttt{www.} rimosso). L'utente può selezionare un URL dal menù o inserirne uno arbitrario nel campo libero.
 
-Server FastAPI con rendering Jinja2. La route \texttt{/compare} recupera il parsing dal backend, calcola le metriche se l'URL è nel Gold Standard, e visualizza quattro pannelli testuali (HTML grezzo, Markdown parsato, testo pulito, Gold Standard) più un diff interattivo.
-
+  \item \textbf{\texttt{GET /compare?url=\textless{}url\textgreater{}}} — Pagina dei risultati: chiama \texttt{/parse} sul backend e produce il testo pulito via \texttt{strip\_markdown}. Se l'URL è nel Gold Standard, recupera anche \texttt{gold\_text} e calcola le metriche di valutazione. Visualizza quattro pannelli (HTML grezzo, Markdown parsato, testo pulito, Gold Standard) e, quando disponibile, un diff interattivo Monaco Editor tra testo estratto e Gold Standard.
 \end{itemize}
 
 % ─── 3. Valutazione Parser ───────────────────────────────────────────────────
