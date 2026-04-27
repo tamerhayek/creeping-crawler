@@ -14,6 +14,8 @@ CONFIG = CrawlerRunConfig(
         "figcaption, .itwiki-template-citazione-footer, "
         # Actions button
         ".mw-highlight-copy-button, .mw-editsection"
+        # Others
+        ".ambox, .metadata, .thumbcaption"
         ),
     remove_forms=True,
 )
