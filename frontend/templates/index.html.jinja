@@ -3,25 +3,61 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-lg-6">
+  <div class="col-lg-8">
     <h1 class="mb-1">Creeping Crawler</h1>
     <p class="text-muted mb-4">
       Crawl a URL, parse the content, and evaluate against the Gold Standard when available.
     </p>
 
-    {% if gs_urls %}
-    <!-- Gold Standard quick-select -->
+    {% if gs_by_domain %}
+    <!-- Gold Standard quick-select — one tab per domain -->
     <div class="card shadow-sm mb-3" id="gsCard">
       <div class="card-body p-4">
-        <label for="gsSelect" class="form-label fw-semibold mb-2">
-          <span class="gs-dot me-1">●</span> Gold Standard URLs
-        </label>
-        <select class="form-select form-select-sm" id="gsSelect">
-          <option value="">Select a GS URL to autofill</option>
-          {% for u in gs_urls %}
-          <option value="{{ u }}">{{ u }}</option>
+        <div class="d-flex align-items-center mb-3">
+          <span class="gs-dot me-1">●</span>
+          <span class="fw-semibold small">Gold Standard URLs</span>
+        </div>
+
+        <!-- Domain tabs -->
+        <ul class="nav gs-pills flex-nowrap overflow-auto mb-3" id="gsTabs" role="tablist">
+          {% for domain, urls in gs_by_domain.items() %}
+          <li class="nav-item flex-shrink-0" role="presentation">
+            <button
+              class="nav-link gs-pill {% if loop.first %}active{% endif %}"
+              id="gs-tab-{{ loop.index }}"
+              data-bs-toggle="pill"
+              data-bs-target="#gs-pane-{{ loop.index }}"
+              type="button"
+              role="tab"
+              aria-controls="gs-pane-{{ loop.index }}"
+              aria-selected="{{ 'true' if loop.first else 'false' }}"
+            >
+              {{ domain }}
+              <span class="gs-pill-count">{{ urls | length }}</span>
+            </button>
+          </li>
           {% endfor %}
-        </select>
+        </ul>
+
+        <!-- Domain panes -->
+        <div class="tab-content">
+          {% for domain, urls in gs_by_domain.items() %}
+          <div
+            class="tab-pane fade {% if loop.first %}show active{% endif %}"
+            id="gs-pane-{{ loop.index }}"
+            role="tabpanel"
+            aria-labelledby="gs-tab-{{ loop.index }}"
+          >
+            <select class="form-select gs-domain-select">
+              <option value="">Select a URL…</option>
+              {% for u in urls %}
+              <option value="{{ u }}">{{ u }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endfor %}
+        </div>
+
       </div>
     </div>
     {% endif %}
@@ -57,35 +93,31 @@
   const submitBtn = document.getElementById('submitBtn');
   const gsHint = document.getElementById('gsHint');
   const mainCard = document.getElementById('mainCard');
-  const gsSelect = document.getElementById('gsSelect');
 
   function update() {
     const val = urlInput.value.trim();
     const isGs = gsUrls.has(val);
     const hasUrl = val.length > 0;
 
-    // Enable/disable button
     submitBtn.disabled = !hasUrl;
-
-    // Toggle button label and color
     submitBtn.textContent = isGs ? 'Compare' : 'Crawl';
     submitBtn.classList.toggle('btn-primary', !isGs);
     submitBtn.classList.toggle('btn-gold', isGs);
-
-    // Toggle gold highlight on card
     mainCard.classList.toggle('card-gs', isGs);
     gsHint.style.display = isGs ? 'block' : 'none';
   }
 
   urlInput.addEventListener('input', update);
 
-  {% if gs_urls %}
-  gsSelect.addEventListener('change', function () {
-    if (this.value) {
-      urlInput.value = this.value;
-      this.value = '';
-      update();
-    }
+  {% if gs_by_domain %}
+  document.querySelectorAll('.gs-domain-select').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+      if (this.value) {
+        urlInput.value = this.value;
+        this.value = '';
+        update();
+      }
+    });
   });
   {% endif %}
 </script>
