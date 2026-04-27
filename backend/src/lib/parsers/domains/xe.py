@@ -21,8 +21,7 @@ class XeParser(ContentParser):
       * drops residual CTA links the gold standard never includes,
       * drops markdown horizontal rules,
       * linearises markdown tables (one cell per line, separator rows
-        dropped) so table content contributes plain tokens to the
-        evaluation set.
+        dropped)
     """
 
     EXCLUDED_SECTIONS = frozenset({
@@ -32,31 +31,25 @@ class XeParser(ContentParser):
         "send money destinations",
     })
 
-    # Plain-text (non-`#`) sentinel lines that mark the start of a
-    # boilerplate block. Everything from the sentinel onwards is dropped.
-    # Used for the converter page where these blocks are rendered as bare
-    # text rather than markdown headings.
+    # Plain-text (non-`#`)
     _TERMINAL_LINES = frozenset({
         "send money destinations",
         "xe is trusted by millions around the globe",
         "trusted by",
     })
 
-    # Plain-text lines that should be dropped individually (CTA / promo
-    # snippets that the gold standard never includes).
+    # Plain-text lines that should be dropped individually
     _DROP_LINES = frozenset({
         "did you know you can send money abroad with xe?",
         "add currency",
         "learn more",
     })
 
-    # Links the gold standard strips out (CTA / download buttons that
-    # survive the crawler config).
+    # Links the gold standard strips out
     _SKIP_LINK_PATTERNS = (
         re.compile(r'\[\s*Speak to an FX specialist', re.IGNORECASE),
         re.compile(r'\[\s*Download the Global Currency Outlook', re.IGNORECASE),
-        # "[Learn more](/send-money/)" CTA links on each tool tile of the
-        # converter page.
+        # "[Learn more](/send-money/)"
         re.compile(r'^\s*\[\s*Learn more\s*\]\(', re.IGNORECASE),
     )
 
@@ -66,10 +59,6 @@ class XeParser(ContentParser):
     # Markdown horizontal rule, e.g. "* * *" or "---".
     _HR_RE = re.compile(r'^(\*\s*){3,}$|^-{3,}$|^_{3,}$')
 
-    # Crawl4AI sometimes emits "**word** ," (space between closing bold
-    # and trailing punctuation). After markdown stripping that becomes
-    # "word ," which tokenises as "word" + ",", whereas the gold standard
-    # has the punctuation glued to the previous word ("word,").
     _BOLD_PUNCT_RE = re.compile(r'\*\* +([,.;:!?\)])')
 
     @staticmethod
