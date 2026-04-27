@@ -25,23 +25,18 @@ CONFIG = CrawlerRunConfig(
         # Article tag chips at the bottom of the post
         "div[class*='flex flex-wrap gap-2'], "
         # Blue business-promo banner after the article body
-        "div[class*='min-h-[456px]'], "
+        "section[itemtype*='BlogPosting'] + div, "
         # Related articles grid section
         "section[class*='py-12'], "
         # "Trusted by" partner-logos block on the converter page
         "div[data-testid='trusted-by'], "
         # Trustpilot reviews carousel on the converter page
         "div[data-testid='trustpilot-newcore'], "
-        # Hidden sr-only "Click to change base currency to X" spans on
-        # each row of the live exchange rates table
+        # Hidden sr-only "Click to change base currency to X"
         "span[id$='-aria-description'], "
-        # "Last updated Apr DD, YYYY, HH:MM UTC" timestamp under the
-        # live exchange rates table
+        # "Last updated Apr DD, YYYY, HH:MM UTC" timestamp
         "div[data-testid='timestamp-template'], "
-        # "Manage your currencies on the go with the Xe app" promo
-        # banner section that follows the live exchange rates table
-        # (mb-24 distinguishes it from the API-section gradient panel,
-        # which shares from-blue-900 but is in the gold standard).
+        # "Manage your currencies on the go with the Xe app"
         "div[class*='mb-24'][class*='from-blue-900'], "
         # Cookie / GDPR consent popup
         "div[class*='animate-slideFromLeft']"
