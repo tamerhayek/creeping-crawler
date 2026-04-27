@@ -7,7 +7,7 @@ CONFIG = CrawlerRunConfig(
     excluded_tags=["style", "script", "link", "meta", "noscript"],
     excluded_selector=(
         # Global navigation & menus
-        "#GlobalNavigation, "
+        "#GlobalNavigation, #MakeItGlobalNavigation, "
         "[class*='CNBCGlobalNav'], "
         "[class*='nav-menu-'], "
         # Account / sign-in / sign-up
@@ -27,9 +27,12 @@ CONFIG = CrawlerRunConfig(
         # Author info block
         "[class*='Author-author'], "
         "[class*='ArticleHeader-authorAndShareInline'], "
+        "[class*='ArticleHeader-styles-makeit-time'], "
+        "[class*='ArticleHeader-styles-makeit-authorAndShare'], "
         # Inline video embeds
         "[class*='InlineVideo'], "
         "[class*='PlaceHolder-wrapper'], "
+        "[class*='InlineImage-styles-makeit-imageEmbed'], "
         # Inline image embeds
         "[class*='InlineImage-imageEmbed'], "
         # Stock ticker / related quotes widget and inline ticker buttons
@@ -39,11 +42,18 @@ CONFIG = CrawlerRunConfig(
         "[class*='googlePreferredSourceContainer'], "
         # Special-report topic navigation
         "[class*='PageHeaderWithTuneInText'], "
+        # Related content
+        "[class*='RelatedStories'], "
+        "[id*='RelatedStories'], "
+        "[id*='RelatedVideo'], "
+        "[class*='RelatedContent-styles-makeit-relatedContent'], "
+        # Social
+        ".social-buttons-transporter, "
         # Transporter / recommended-articles sections
         "[class*='TransporterSection'], "
         "[class*='SectionWrapper'], "
         # Global footer
-        "#GlobalFooter, [class*='CNBCFooter']"
+        "#GlobalFooter, [class*='CNBCFooter'], [class*='MakeItFooter-styles-makeit-container']"
     ),
     remove_forms=True,
 )
