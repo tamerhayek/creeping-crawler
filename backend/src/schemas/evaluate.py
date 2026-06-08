@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 
 class EvaluateRequest(BaseModel):
+    """Request body for POST /evaluate and POST /evaluate_judge."""
+
     parsed_text: str
     gold_text: str
 
@@ -21,5 +23,23 @@ class SimilarityEval(BaseModel):
 
 
 class EvaluateResponse(BaseModel):
+    """Response for POST /evaluate."""
+
     token_level_eval: TokenLevelEval
     similarity_eval: SimilarityEval
+
+
+class JudgeEvalResponse(BaseModel):
+    """Response for POST /evaluate_judge."""
+
+    model_name: str
+    judge_score: int
+    judge_feedback: str
+
+
+class FullGsEvalResponse(BaseModel):
+    """Response for GET /full_gs_eval: averaged metrics over a domain's gold standard."""
+
+    token_level_eval: TokenLevelEval
+    similarity_eval: SimilarityEval
+    judge_score: float

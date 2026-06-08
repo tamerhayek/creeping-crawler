@@ -4,10 +4,14 @@ from pydantic import BaseModel
 
 
 class ParseRequest(BaseModel):
-    """Request body for POST /parse."""
+    """Request body for POST /parse.
+
+    If ``local`` is True the HTML is read from the local database; otherwise
+    the page is crawled live.
+    """
 
     url: str
-    html_text: str
+    local: bool | None = None
 
 
 class ParseResponse(BaseModel):

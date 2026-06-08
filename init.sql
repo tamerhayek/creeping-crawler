@@ -21,3 +21,19 @@ CREATE TABLE IF NOT EXISTS gold_standard (
     PRIMARY KEY (url),
     FOREIGN KEY (url) REFERENCES web_resources(url) ON DELETE CASCADE
 );
+
+-- Tabella evaluations: cache delle metriche per /db_stats e /full_gs_eval,
+-- popolata progressivamente dagli endpoint di evaluation.
+CREATE TABLE IF NOT EXISTS evaluations (
+    url VARCHAR(2048) CHARACTER SET ascii NOT NULL,
+    precision_val DOUBLE,
+    recall_val DOUBLE,
+    f1 DOUBLE,
+    cosine DOUBLE,
+    jaccard DOUBLE,
+    excess_ratio DOUBLE,
+    judge_score INT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (url),
+    FOREIGN KEY (url) REFERENCES web_resources(url) ON DELETE CASCADE
+);

@@ -47,32 +47,10 @@ make freeze         # Snapshot requirements.txt files from current envs
 make delete-envs    # Remove conda environments
 ```
 
-### Crawling gold standard URLs
-
-Results are saved to `gs_results/`:
-
-| Directory | Content |
-|-----------|---------|
-| `html/` | Raw HTML, prettified |
-| `cleaned_html/` | Cleaned HTML, prettified |
-| `markdown/` | Raw markdown from Crawl4AI (`.md`) |
-| `stripped/` | Plain text after markdown stripping (`.txt`) |
-| `parsed/` | Domain-specific parser output (`.txt`) |
-
-The `stripped/` and `parsed/` outputs mirror the real application pipeline: `strip_markdown()` removes markdown syntax, then the domain parser (e.g. `WikipediaParser`, `CnbcParser`) applies its own extraction logic. The parser used is logged for each URL.
-
-```bash
-make crawl                                        # all domains
-make crawl -- --domain www.xe.com                 # single domain
-make crawl -- --update-json                       # all domains + update html_text in gs_data/
-make crawl -- --domain www.xe.com --update-json   # single domain + update JSON
-```
-
 ## Project Structure
 
 ```
 backend/
-├── crawl_gs.py               # Script for crawling gold standard URLs
 └── src/
     ├── server.py                 # FastAPI app entry point
     ├── routes/                   # API route handlers
@@ -134,16 +112,22 @@ frontend/
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/parse?url=` | Crawl + parse a URL |
-| POST | `/parse` | Parse provided `{url, html_text}` without crawling |
+| POST | `/parse` | Parse `{url, local?}` — live crawl or local DB |
 | GET | `/domains` | List supported domains |
 | GET | `/gold_standard?url=` | Gold standard entry for a URL |
-| GET | `/full_gold_standard?domain=` | All GS entries for a domain |
-| POST | `/evaluate` | Score `{parsed_text, gold_text}` |
-| GET | `/gold_standard_urls` | List all gold standard URLs |
-| GET | `/full_gs_eval?domain=` | Averaged scores across all GS entries for a domain |
+| GET | `/gold_standard_urls?domain=` | GS URLs for a domain |
+| POST | `/evaluate` | Score `{parsed_text, gold_text}` (quantitative metrics) |
+| POST | `/evaluate_judge` | Score `{parsed_text, gold_text}` via LLM judge |
+| GET | `/full_gs_eval?domain=` | Averaged scores (incl. judge) across a domain's GS |
+| POST | `/add_web_resource` | Insert `{url, html_text}` into the DB |
+| POST | `/add_gold_standard` | Insert `{url, gold_text}` into the DB |
+| DELETE | `/web_resource` | Remove `{url}` from web_resources (cascades) |
+| DELETE | `/gold_standard` | Remove `{url}` from gold_standard only |
+| GET | `/db_stats` | Per-domain counts and average evaluations |
+| GET | `/db_schema` | JSON description of the DB tables |
+| GET | `/status` | Health of backend / database / ollama |
 
-Errors: `400` unsupported domain · `404` URL not in GS · `503` unreachable URL.
+Errors: `400` unsupported domain · `404` URL not in DB · `502` unreachable URL.
 
 ## Supported domains
 
@@ -199,56 +183,24 @@ Average scores across all gold standard URLs per domain (`/full_gs_eval`).
 
 ---
 
-## Graders
+## Grader
 
 Computer Engineering Laboratory — A.Y. 2025/2026
 
-Two separate graders are bundled at the repository root:
+The grader (`lab-grader.tar.gz`, image tag `lab-grader-progetto-finale:1.0.4`) tests the four project components (backend, database, Ollama, frontend) through every REST endpoint. It expects the stack on its default ports: backend `8003`, frontend `8004`, MariaDB `3306`, Ollama `11434`.
 
-| Archive | Image tag | Scope |
-|---------|-----------|-------|
-| `lab-grader-esonero.tar.gz` | `lab-grader-esonero-1:1.0.1` | Lab Exam 1 (esonero) |
-| `lab-grader-progetto-finale.tar.gz` | `lab-grader-progetto-finale:1.0.4` | Final project |
-
-Both expect the project stack to be running on its default ports: backend `8003`, frontend `8004`, MariaDB `3306`, Ollama `11434`.
+The database is mutated during the run; reset the stack between executions if you re-run the grader. The project is graded exactly as delivered: verify the grader passes immediately after extracting the archive, with no further changes.
 
 ```bash
 make up
-```
-
-### Esonero (Lab Exam 1)
-
-```bash
-make grader-load-esonero
-make test-esonero STUDENT_ID=<your_student_id>
+make grader-load
+make test STUDENT_ID=<your_student_id>
 ```
 
 Equivalent raw commands:
 
 ```bash
-docker load -i lab-grader-esonero.tar.gz
-docker run --network host lab-grader-esonero-1:1.0.1 <your_student_id>
-```
-
-### Progetto Finale
-
-Tests the four main project components (backend, database, Ollama, frontend) through every REST endpoint. The database is mutated during the run, so reset the stack between executions if you re-run the grader. The project is graded exactly as delivered: verify the grader passes immediately after extracting the archive, with no further changes.
-
-```bash
-make grader-load-final
-make test-final STUDENT_ID=<your_student_id>
-```
-
-For a machine-readable JSON report under `./output/report.json`:
-
-```bash
-make test-final-report STUDENT_ID=<your_student_id>
-```
-
-Equivalent raw commands:
-
-```bash
-docker load -i lab-grader-progetto-finale.tar.gz
+docker load -i lab-grader.tar.gz
 docker run --network host lab-grader-progetto-finale:1.0.4 <your_student_id>
 
 # With JSON report:

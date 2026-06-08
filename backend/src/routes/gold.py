@@ -1,24 +1,45 @@
-"""Route handlers for gold standard endpoints."""
+"""Route handlers for gold standard endpoints (read + write + delete)."""
+
+import re
 
 from fastapi import APIRouter, HTTPException, Query
 
 from ..lib import (
     assert_supported_domain,
     domain_of,
-    get_available_urls,
     get_entry_for_url,
     get_urls_for_domain,
 )
+from ..lib.db import queries
 from ..schemas import (
-    FullGoldStandardResponse,
+    AddGoldStandardRequest,
+    AddWebResourceRequest,
+    DeleteUrlRequest,
     GoldStandardResponse,
     GoldStandardUrlsResponse,
+    StatusResponse,
 )
 
 router = APIRouter()
 
+TITLE_PATTERN = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 
-def _entry_to_response(entry: dict) -> GoldStandardResponse:
+
+def _extract_title_from_html(html: str) -> str:
+    """Return the text inside the first <title>...</title> tag, or empty string."""
+    match = TITLE_PATTERN.search(html)
+    return match.group(1).strip() if match else ""
+
+
+# ─── Read ────────────────────────────────────────────────────────────────────
+
+@router.get("/gold_standard", response_model=GoldStandardResponse)
+def gold_standard(url: str = Query(...)):
+    """Return the gold standard entry for a URL."""
+    assert_supported_domain(domain_of(url))
+    entry = get_entry_for_url(url)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
     return GoldStandardResponse(
         url=entry["url"],
         domain=entry["domain"],
@@ -28,30 +49,52 @@ def _entry_to_response(entry: dict) -> GoldStandardResponse:
     )
 
 
-@router.get("/gold_standard", response_model=GoldStandardResponse)
-def gold_standard(url: str = Query(...)):
-    """Return the gold standard entry for a URL, read directly from the GS JSON."""
-    assert_supported_domain(domain_of(url))
-    entry = get_entry_for_url(url)
-    if entry is None:
-        raise HTTPException(status_code=404, detail=f"URL not found in gold standard: {url}")
-    return _entry_to_response(entry)
-
-
-@router.get("/full_gold_standard", response_model=FullGoldStandardResponse)
-def full_gold_standard(domain: str = Query(...)):
-    """Return all gold standard entries for a domain, read directly from the GS JSON."""
-    assert_supported_domain(domain)
-    urls = get_urls_for_domain(domain)
-    entries = []
-    for url in urls:
-        entry = get_entry_for_url(url)
-        if entry is not None:
-            entries.append(_entry_to_response(entry))
-    return FullGoldStandardResponse(gold_standard=entries)
-
-
 @router.get("/gold_standard_urls", response_model=GoldStandardUrlsResponse)
-def gold_standard_urls():
-    """Return all URLs present in the gold standard."""
-    return GoldStandardUrlsResponse(urls=get_available_urls())
+def gold_standard_urls(domain: str = Query(...)):
+    """Return all gold standard URLs for the given domain."""
+    assert_supported_domain(domain)
+    return GoldStandardUrlsResponse(gold_standard_urls=get_urls_for_domain(domain))
+
+
+# ─── Write ───────────────────────────────────────────────────────────────────
+
+@router.post("/add_web_resource", response_model=StatusResponse)
+def add_web_resource(body: AddWebResourceRequest):
+    """Insert (or overwrite) a web_resources row. Domain and title are derived from the input."""
+    assert_supported_domain(domain_of(body.url))
+    title = _extract_title_from_html(body.html_text)
+    queries.add_resource(body.url, body.html_text, title=title)
+    return StatusResponse(status="ok")
+
+
+@router.post("/add_gold_standard", response_model=StatusResponse)
+def add_gold_standard(body: AddGoldStandardRequest):
+    """Insert (or overwrite) a gold_standard row. The matching web_resource must already exist."""
+    assert_supported_domain(domain_of(body.url))
+    inserted = queries.add_gold_standard(body.url, body.gold_text)
+    if not inserted:
+        raise HTTPException(
+            status_code=400,
+            detail=f"URL not present in web_resources: {body.url}",
+        )
+    return StatusResponse(status="ok")
+
+
+# ─── Delete ──────────────────────────────────────────────────────────────────
+
+@router.delete("/web_resource", response_model=StatusResponse)
+def delete_web_resource(body: DeleteUrlRequest):
+    """Remove a web_resources row (cascades to the matching gold_standard row)."""
+    removed = queries.delete_resource(body.url)
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"URL not present in web_resources: {body.url}")
+    return StatusResponse(status="ok")
+
+
+@router.delete("/gold_standard", response_model=StatusResponse)
+def delete_gold_standard(body: DeleteUrlRequest):
+    """Remove only the gold_standard row, leaving the web_resource in place."""
+    removed = queries.delete_gold_standard(body.url)
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"URL not present in gold standard: {body.url}")
+    return StatusResponse(status="ok")

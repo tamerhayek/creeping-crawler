@@ -13,13 +13,33 @@ class GoldStandardResponse(BaseModel):
     gold_text: str   # manually curated clean text — ground truth for evaluation
 
 
-class FullGoldStandardResponse(BaseModel):
-    """Response for GET /full_gold_standard: all entries for a domain."""
-
-    gold_standard: list[GoldStandardResponse]
-
-
 class GoldStandardUrlsResponse(BaseModel):
-    """Response for GET /gold_standard_urls: list of all gold standard URLs."""
+    """Response for GET /gold_standard_urls: list of GS URLs for a domain."""
 
-    urls: list[str]
+    gold_standard_urls: list[str]
+
+
+class AddWebResourceRequest(BaseModel):
+    """Request body for POST /add_web_resource."""
+
+    url: str
+    html_text: str
+
+
+class AddGoldStandardRequest(BaseModel):
+    """Request body for POST /add_gold_standard."""
+
+    url: str
+    gold_text: str
+
+
+class DeleteUrlRequest(BaseModel):
+    """Request body for DELETE /web_resource and DELETE /gold_standard."""
+
+    url: str
+
+
+class StatusResponse(BaseModel):
+    """Response for the add/delete endpoints: ``ok`` or ``error``."""
+
+    status: str

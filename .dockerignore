@@ -35,14 +35,10 @@ docker-compose*.yml
 docker-compose*.yaml
 
 # Dev artifacts
-gs_results/
 *.log
 *.tmp
 .env
 .env.local
-
-# Script di crawling (non va in produzione)
-backend/crawl_gs.py
 
 # File di servizio degli altri container (non servono dentro backend/frontend image)
 init.sql
@@ -50,9 +46,9 @@ entrypoint.sh
 
 # Bundle e documenti pesanti che non vanno nelle image dei servizi Python
 docs/
-lab-grader-*.tar.gz
-report*.pdf
-report*.tex
+lab-grader.tar.gz
+report.pdf
+report.tex
 
 # Documentazione e tooling locale
 *.md

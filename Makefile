@@ -3,11 +3,9 @@
         install-backend install-frontend install \
         run-backend run-frontend \
         up down logs \
-        crawl \
         freeze-backend freeze-frontend freeze \
         delete-backend delete-frontend delete-envs \
-        grader-load-esonero grader-load-final \
-        test-esonero test-final test-final-report
+        grader-load test
 
 CONDA ?= $(shell which conda)
 
@@ -71,13 +69,6 @@ down:
 logs:
 	docker compose logs -f $(_DC_ARGS)
 
-# ─── Crawl ───────────────────────────────────────────────────────────────────
-
-# Crawl gold standard URLs into gs_results/.
-# Pass args after --: make crawl -- --domain www.xe.com --update-json
-crawl:
-	cd backend && $(CONDA) run --no-capture-output -n creeping-crawler-backend python crawl_gs.py $(_DC_ARGS)
-
 # Silences the extra "targets" Make sees when args are passed positionally.
 %:
 	@:
@@ -92,48 +83,22 @@ freeze-frontend:
 
 freeze: freeze-backend freeze-frontend
 
-# ─── Graders ─────────────────────────────────────────────────────────────────
+# ─── Grader ──────────────────────────────────────────────────────────────────
 
-# Esonero (Lab Exam 1).
-GRADER_ESONERO_IMAGE ?= lab-grader-esonero.tar.gz
-GRADER_ESONERO_TAG   := lab-grader-esonero-1:1.0.1
-
-# Final project.
-GRADER_FINAL_IMAGE   ?= lab-grader-progetto-finale.tar.gz
-GRADER_FINAL_TAG     := lab-grader-progetto-finale:1.0.4
+GRADER_IMAGE ?= lab-grader.tar.gz
+GRADER_TAG   := lab-grader-progetto-finale:1.0.4
 
 STUDENT_ID ?=
 
-grader-load-esonero:
-	docker load -i $(GRADER_ESONERO_IMAGE)
+grader-load:
+	docker load -i $(GRADER_IMAGE)
 
-grader-load-final:
-	docker load -i $(GRADER_FINAL_IMAGE)
-
-# Usage: make test-esonero STUDENT_ID=<your_student_id>
-test-esonero:
+# Usage: make test STUDENT_ID=<your_student_id>
+test:
 ifndef STUDENT_ID
-	$(error STUDENT_ID is not set. Usage: make test-esonero STUDENT_ID=<your_student_id>)
+	$(error STUDENT_ID is not set. Usage: make test STUDENT_ID=<your_student_id>)
 endif
-	docker run --rm --name creeping-crawler-grader-esonero --network host $(GRADER_ESONERO_TAG) $(STUDENT_ID)
-
-# Usage: make test-final STUDENT_ID=<your_student_id>
-test-final:
-ifndef STUDENT_ID
-	$(error STUDENT_ID is not set. Usage: make test-final STUDENT_ID=<your_student_id>)
-endif
-	docker run --rm --name creeping-crawler-grader-final --network host $(GRADER_FINAL_TAG) $(STUDENT_ID)
-
-# Writes a JSON report to ./output/report.json.
-# Usage: make test-final-report STUDENT_ID=<your_student_id>
-test-final-report:
-ifndef STUDENT_ID
-	$(error STUDENT_ID is not set. Usage: make test-final-report STUDENT_ID=<your_student_id>)
-endif
-	mkdir -p output
-	docker run --rm --name creeping-crawler-grader-final --network host \
-		-v "$(CURDIR)/output:/output" \
-		$(GRADER_FINAL_TAG) $(STUDENT_ID) --machine -o /output/report.json
+	docker run --rm --name creeping-crawler-grader --network host $(GRADER_TAG) $(STUDENT_ID)
 
 # ─── Cleanup ─────────────────────────────────────────────────────────────────
 

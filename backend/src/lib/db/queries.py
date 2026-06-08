@@ -228,3 +228,97 @@ def add_entries(entries: list[dict]) -> None:
                 (entry["url"], entry["gold_text"]),
             )
         connection.commit()
+
+
+# ─── Evaluations cache ───────────────────────────────────────────────────────
+
+def save_quantitative_eval(
+    url: str,
+    precision: float,
+    recall: float,
+    f1: float,
+    cosine: float,
+    jaccard: float,
+    excess_ratio: float,
+) -> None:
+    """Upsert token-level + similarity metrics for a URL."""
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO evaluations (url, precision_val, recall_val, f1, cosine, jaccard, excess_ratio)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                precision_val = VALUES(precision_val),
+                recall_val = VALUES(recall_val),
+                f1 = VALUES(f1),
+                cosine = VALUES(cosine),
+                jaccard = VALUES(jaccard),
+                excess_ratio = VALUES(excess_ratio)
+            """,
+            (url, precision, recall, f1, cosine, jaccard, excess_ratio),
+        )
+        connection.commit()
+
+
+def save_judge_eval(url: str, judge_score: int) -> None:
+    """Upsert the judge score for a URL."""
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO evaluations (url, judge_score)
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE judge_score = VALUES(judge_score)
+            """,
+            (url, judge_score),
+        )
+        connection.commit()
+
+
+def get_avg_eval_per_domain() -> dict[str, dict]:
+    """Return the average token-level and similarity metrics for each domain."""
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT w.domain,
+                   AVG(e.precision_val), AVG(e.recall_val), AVG(e.f1),
+                   AVG(e.cosine), AVG(e.jaccard), AVG(e.excess_ratio)
+            FROM evaluations e
+            JOIN web_resources w ON w.url = e.url
+            WHERE e.precision_val IS NOT NULL
+            GROUP BY w.domain
+            """
+        )
+        return {
+            row[0]: {
+                "token_level_eval": {
+                    "precision": float(row[1]),
+                    "recall": float(row[2]),
+                    "f1": float(row[3]),
+                },
+                "similarity_eval": {
+                    "cosine": float(row[4]),
+                    "jaccard": float(row[5]),
+                    "excess_ratio": float(row[6]),
+                },
+            }
+            for row in cursor.fetchall()
+        }
+
+
+def get_avg_judge_per_domain() -> dict[str, dict]:
+    """Return the average judge score for each domain."""
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT w.domain, AVG(e.judge_score)
+            FROM evaluations e
+            JOIN web_resources w ON w.url = e.url
+            WHERE e.judge_score IS NOT NULL
+            GROUP BY w.domain
+            """
+        )
+        return {row[0]: {"judge_score": float(row[1])} for row in cursor.fetchall()}

@@ -31,11 +31,6 @@ def is_supported_domain(domain: str) -> bool:
     return domain in get_domains()
 
 
-def get_available_urls() -> list[str]:
-    """Return all URLs currently present in the gold standard."""
-    return queries.get_all_urls()
-
-
 def get_urls_for_domain(domain: str) -> list[str]:
     """Return all GS URLs belonging to the given domain."""
     return queries.get_urls_by_domain(domain)

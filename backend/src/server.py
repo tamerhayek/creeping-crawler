@@ -13,7 +13,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .lib.db import close_pool, init_pool, populate_if_empty
-from .routes import domains_router, evaluate_router, gold_router, parse_router
+from .routes import (
+    domains_router,
+    evaluate_router,
+    gold_router,
+    parse_router,
+    stats_router,
+)
 
 
 @asynccontextmanager
@@ -32,3 +38,4 @@ app.include_router(domains_router)
 app.include_router(parse_router)
 app.include_router(gold_router)
 app.include_router(evaluate_router)
+app.include_router(stats_router)
