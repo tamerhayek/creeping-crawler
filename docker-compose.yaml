@@ -1,14 +1,44 @@
 services:
+  mariadb:
+    image: mariadb:11
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: creeping_crawler
+      MARIADB_USER: creeping_crawler
+      MARIADB_PASSWORD: creeping_crawler
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    volumes:
+      - ollama-data:/root/.ollama
+      - ./entrypoint.sh:/entrypoint.sh
+
   backend:
-    container_name: creeping-crawler-backend
     build:
       context: .
       dockerfile: backend/Dockerfile
     ports:
       - "8003:8003"
+    environment:
+      DB_HOST: mariadb
+      DB_NAME: creeping_crawler
+      DB_USER: creeping_crawler
+      DB_PASSWORD: creeping_crawler
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: qwen3:4b
+    depends_on:
+      - mariadb
+      - ollama
 
   frontend:
-    container_name: creeping-crawler-frontend
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -18,3 +48,7 @@ services:
       BACKEND_URL: http://backend:8003
     depends_on:
       - backend
+
+volumes:
+  mariadb-data:
+  ollama-data:

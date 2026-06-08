@@ -18,11 +18,23 @@ This creates two conda environments (`creeping-crawler-backend` and `creeping-cr
 ## Running
 
 **With Docker Compose (recommended):**
+
 ```bash
-docker compose up -d --build
+make up                  # build + start all services in background
+make logs                # follow logs of all services (Ctrl+C to exit)
+make down                # stop and remove all services
+```
+
+Each target accepts an optional service name as positional argument to target a single container (`mariadb`, `ollama`, `backend`, `frontend`):
+
+```bash
+make up backend          # start only backend (and its dependencies)
+make logs ollama         # follow logs of ollama
+make down mariadb        # stop and remove only mariadb
 ```
 
 **Without Docker (two terminals):**
+
 ```bash
 make run-backend    # http://localhost:8003
 make run-frontend   # http://localhost:8004
@@ -187,28 +199,60 @@ Average scores across all gold standard URLs per domain (`/full_gs_eval`).
 
 ---
 
-## Grader — Lab Exam 1
+## Graders
 
 Computer Engineering Laboratory — A.Y. 2025/2026
 
-Download the grader image from Classroom, then follow the steps below.
+Two separate graders are bundled at the repository root:
 
-### Instructions
+| Archive | Image tag | Scope |
+|---------|-----------|-------|
+| `lab-grader-esonero.tar.gz` | `lab-grader-esonero-1:1.0.1` | Lab Exam 1 (esonero) |
+| `lab-grader-progetto-finale.tar.gz` | `lab-grader-progetto-finale:1.0.4` | Final project |
 
-1. Load the grader Docker image:
+Both expect the project stack to be running on its default ports: backend `8003`, frontend `8004`, MariaDB `3306`, Ollama `11434`.
 
-    ```bash
-    docker load -i lab-grader-esonero.tar.gz
-    ```
+```bash
+make up
+```
 
-2. Start your project:
+### Esonero (Lab Exam 1)
 
-    ```bash
-    docker compose up --build -d
-    ```
+```bash
+make grader-load-esonero
+make test-esonero STUDENT_ID=<your_student_id>
+```
 
-3. Run the grader with your student ID:
+Equivalent raw commands:
 
-    ```bash
-    docker run --network host lab-grader-esonero-1:1.0.1 <your_student_id>
-    ```
+```bash
+docker load -i lab-grader-esonero.tar.gz
+docker run --network host lab-grader-esonero-1:1.0.1 <your_student_id>
+```
+
+### Progetto Finale
+
+Tests the four main project components (backend, database, Ollama, frontend) through every REST endpoint. The database is mutated during the run, so reset the stack between executions if you re-run the grader. The project is graded exactly as delivered: verify the grader passes immediately after extracting the archive, with no further changes.
+
+```bash
+make grader-load-final
+make test-final STUDENT_ID=<your_student_id>
+```
+
+For a machine-readable JSON report under `./output/report.json`:
+
+```bash
+make test-final-report STUDENT_ID=<your_student_id>
+```
+
+Equivalent raw commands:
+
+```bash
+docker load -i lab-grader-progetto-finale.tar.gz
+docker run --network host lab-grader-progetto-finale:1.0.4 <your_student_id>
+
+# With JSON report:
+docker run --network host \
+  -v "$(pwd)/output:/output" \
+  lab-grader-progetto-finale:1.0.4 <your_student_id> --machine -o /output/report.json
+```

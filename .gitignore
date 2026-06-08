@@ -1,4 +1,11 @@
 __pycache__
-lab-grader-esonero.tar.gz
 .DS_Store
 gs_results/
+output/
+*.log
+.env
+.env.local
+
+# Grader bundles (forniti come tarball pesanti, non vanno nel repo)
+lab-grader-esonero.tar.gz
+lab-grader-progetto-finale.tar.gz
