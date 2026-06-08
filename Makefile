@@ -2,7 +2,7 @@
         env-backend env-frontend envs \
         install-backend install-frontend install \
         run-backend run-frontend \
-        up down logs \
+        up down logs reset \
         freeze-backend freeze-frontend freeze \
         delete-backend delete-frontend delete-envs \
         grader-load test
@@ -69,6 +69,15 @@ down:
 logs:
 	docker compose logs -f $(_DC_ARGS)
 
+# Wipe the MariaDB and Ollama volumes and rebuild the whole stack from
+# scratch (no Docker build cache for backend/frontend either).
+reset:
+	docker compose down
+	docker volume rm creeping-crawler_mariadb-data 2>/dev/null || true
+	docker volume rm creeping-crawler_ollama-data 2>/dev/null || true
+	docker compose build --no-cache
+	docker compose up -d
+
 # Silences the extra "targets" Make sees when args are passed positionally.
 %:
 	@:
@@ -98,6 +107,7 @@ test:
 ifndef STUDENT_ID
 	$(error STUDENT_ID is not set. Usage: make test STUDENT_ID=<your_student_id>)
 endif
+	docker load -i $(GRADER_IMAGE)
 	docker run --rm --name creeping-crawler-grader --network host $(GRADER_TAG) $(STUDENT_ID)
 
 # ─── Cleanup ─────────────────────────────────────────────────────────────────

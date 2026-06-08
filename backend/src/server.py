@@ -6,6 +6,7 @@ Run from the backend/ directory:
 Startup sequence (lifespan):
     1. wait for MariaDB and open the connection pool
     2. seed the gold standard tables from gs_data/ on first boot
+    3. precompute and cache quantitative metrics for every GS URL
 """
 
 from contextlib import asynccontextmanager
@@ -13,6 +14,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .lib.db import close_pool, init_pool, populate_if_empty
+from .lib.precompute import precompute_quantitative_evaluations
 from .routes import (
     domains_router,
     evaluate_router,
@@ -28,6 +30,9 @@ async def lifespan(app: FastAPI):
     inserted_count = populate_if_empty()
     if inserted_count:
         print(f"[startup] seeded {inserted_count} gold standard entries", flush=True)
+    precomputed = await precompute_quantitative_evaluations()
+    if precomputed:
+        print(f"[startup] precomputed {precomputed} quantitative evaluations", flush=True)
     yield
     close_pool()
 

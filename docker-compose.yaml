@@ -11,6 +11,12 @@ services:
     volumes:
       - mariadb-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   ollama:
     image: ollama/ollama
@@ -20,6 +26,14 @@ services:
     volumes:
       - ollama-data:/root/.ollama
       - ./entrypoint.sh:/entrypoint.sh
+    healthcheck:
+      # Considera healthy solo quando il modello è già stato scaricato
+      # (al primo boot il pull può richiedere alcuni minuti).
+      test: ["CMD-SHELL", "ollama list | grep -q llama3.2:3b"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
 
   backend:
     build:
@@ -35,8 +49,10 @@ services:
       OLLAMA_HOST: http://ollama:11434
       OLLAMA_MODEL: llama3.2:3b
     depends_on:
-      - mariadb
-      - ollama
+      mariadb:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
 
   frontend:
     build:

@@ -110,6 +110,20 @@ def count_resources() -> int:
         return cursor.fetchone()[0]
 
 
+def get_urls_missing_quantitative_eval() -> list[str]:
+    """Return GS URLs for which token-level/similarity metrics are not yet cached."""
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT g.url FROM gold_standard g
+            LEFT JOIN evaluations e ON e.url = g.url
+            WHERE e.precision_val IS NULL
+            """
+        )
+        return [row[0] for row in cursor.fetchall()]
+
+
 def count_resources_per_domain() -> dict[str, int]:
     """Number of web_resources rows grouped by domain."""
     with get_connection() as connection:

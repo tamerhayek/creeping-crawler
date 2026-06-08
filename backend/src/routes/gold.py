@@ -61,7 +61,6 @@ def gold_standard_urls(domain: str = Query(...)):
 @router.post("/add_web_resource", response_model=StatusResponse)
 def add_web_resource(body: AddWebResourceRequest):
     """Insert (or overwrite) a web_resources row. Domain and title are derived from the input."""
-    assert_supported_domain(domain_of(body.url))
     title = _extract_title_from_html(body.html_text)
     queries.add_resource(body.url, body.html_text, title=title)
     return StatusResponse(status="ok")
@@ -70,7 +69,6 @@ def add_web_resource(body: AddWebResourceRequest):
 @router.post("/add_gold_standard", response_model=StatusResponse)
 def add_gold_standard(body: AddGoldStandardRequest):
     """Insert (or overwrite) a gold_standard row. The matching web_resource must already exist."""
-    assert_supported_domain(domain_of(body.url))
     inserted = queries.add_gold_standard(body.url, body.gold_text)
     if not inserted:
         raise HTTPException(
