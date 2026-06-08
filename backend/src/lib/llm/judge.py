@@ -8,6 +8,7 @@ result with score 1 and a diagnostic feedback is returned.
 import json
 import re
 
+from ..evaluation.tokens import strip_markdown
 from . import client
 from .models import JudgeResult
 from .prompt import build_judge_prompt
@@ -18,8 +19,11 @@ JSON_OBJECT_PATTERN = re.compile(r"\{.*\}", re.DOTALL)
 
 
 def evaluate_with_judge(parsed_text: str, gold_text: str) -> JudgeResult:
-    """Ask the LLM to score the parsed text against the gold text."""
-    prompt = build_judge_prompt(parsed_text, gold_text)
+    """Ask the LLM to score the parsed text against the gold text.
+
+    Markdown is stripped from both inputs so the judge compares content only.
+    """
+    prompt = build_judge_prompt(strip_markdown(parsed_text), strip_markdown(gold_text))
     raw_response = client.generate(prompt)
     return _parse_judge_response(raw_response)
 

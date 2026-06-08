@@ -68,31 +68,31 @@ def add_web_resource(body: AddWebResourceRequest):
 
 @router.post("/add_gold_standard", response_model=StatusResponse)
 def add_gold_standard(body: AddGoldStandardRequest):
-    """Insert (or overwrite) a gold_standard row. The matching web_resource must already exist."""
+    """Insert (or overwrite) a gold_standard row.
+
+    Returns ``status=error`` if the matching web_resource does not exist.
+    """
     inserted = queries.add_gold_standard(body.url, body.gold_text)
-    if not inserted:
-        raise HTTPException(
-            status_code=400,
-            detail=f"URL not present in web_resources: {body.url}",
-        )
-    return StatusResponse(status="ok")
+    return StatusResponse(status="ok" if inserted else "error")
 
 
 # ─── Delete ──────────────────────────────────────────────────────────────────
 
 @router.delete("/web_resource", response_model=StatusResponse)
 def delete_web_resource(body: DeleteUrlRequest):
-    """Remove a web_resources row (cascades to the matching gold_standard row)."""
+    """Remove a web_resources row (cascades to the matching gold_standard row).
+
+    Returns ``status=ok`` if a row was removed, ``status=error`` otherwise.
+    """
     removed = queries.delete_resource(body.url)
-    if not removed:
-        raise HTTPException(status_code=404, detail=f"URL not present in web_resources: {body.url}")
-    return StatusResponse(status="ok")
+    return StatusResponse(status="ok" if removed else "error")
 
 
 @router.delete("/gold_standard", response_model=StatusResponse)
 def delete_gold_standard(body: DeleteUrlRequest):
-    """Remove only the gold_standard row, leaving the web_resource in place."""
+    """Remove only the gold_standard row, leaving the web_resource in place.
+
+    Returns ``status=ok`` if a row was removed, ``status=error`` otherwise.
+    """
     removed = queries.delete_gold_standard(body.url)
-    if not removed:
-        raise HTTPException(status_code=404, detail=f"URL not present in gold standard: {body.url}")
-    return StatusResponse(status="ok")
+    return StatusResponse(status="ok" if removed else "error")

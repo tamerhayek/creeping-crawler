@@ -10,8 +10,6 @@ from ..schemas import DbStatsResponse, HealthResponse
 router = APIRouter()
 
 
-# Static description of the schema returned by /db_schema (slide 37 of the
-# project spec). Kept in this module because it is not part of any query.
 SCHEMA_DESCRIPTION: dict[str, dict[str, str]] = {
     "web_resources": {
         "url": "varchar(2048), PK",

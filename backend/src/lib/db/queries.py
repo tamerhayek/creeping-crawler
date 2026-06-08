@@ -323,30 +323,42 @@ def get_avg_eval_per_domain() -> dict[str, dict]:
 
 
 def get_avg_judge_per_domain() -> dict[str, dict]:
-    """Return the average judge score for each domain.
+    """Per-domain averages of ``judge_score``, ``f1`` and ``cosine``.
 
-    Judge scores are populated on demand by ``/full_gs_eval``. When the cache
-    is still empty, fall back to ``judge_score: 0.0`` for every gold_standard
-    domain so that ``/db_stats`` always exposes a non-empty object.
+    judge_score is 0.0 until /full_gs_eval populates it; f1 and cosine come
+    from the startup precompute.
     """
     with get_connection() as connection:
         cursor = connection.cursor()
         cursor.execute(
             """
-            SELECT w.domain, AVG(e.judge_score)
+            SELECT w.domain,
+                   AVG(e.judge_score),
+                   AVG(e.f1),
+                   AVG(e.cosine)
             FROM evaluations e
             JOIN web_resources w ON w.url = e.url
-            WHERE e.judge_score IS NOT NULL
+            WHERE e.precision_val IS NOT NULL OR e.judge_score IS NOT NULL
             GROUP BY w.domain
             """
         )
-        averages = {row[0]: {"judge_score": float(row[1])} for row in cursor.fetchall()}
-        if averages:
-            return averages
+        per_domain = {
+            row[0]: {
+                "judge_score": float(row[1]) if row[1] is not None else 0.0,
+                "f1": float(row[2]) if row[2] is not None else 0.0,
+                "cosine": float(row[3]) if row[3] is not None else 0.0,
+            }
+            for row in cursor.fetchall()
+        }
+        if per_domain:
+            return per_domain
         cursor.execute(
             """
             SELECT DISTINCT w.domain FROM gold_standard g
             JOIN web_resources w ON w.url = g.url
             """
         )
-        return {row[0]: {"judge_score": 0.0} for row in cursor.fetchall()}
+        return {
+            row[0]: {"judge_score": 0.0, "f1": 0.0, "cosine": 0.0}
+            for row in cursor.fetchall()
+        }
