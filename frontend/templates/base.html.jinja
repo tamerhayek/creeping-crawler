@@ -1,24 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Creeping Crawler{% block title %}{% endblock %}</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<nav class="navbar navbar-dark bg-dark">
-  <div class="container-fluid px-4">
-    <a class="navbar-brand fw-semibold" href="/">Creeping Crawler</a>
-  </div>
-</nav>
 
-<div class="container-fluid px-4 py-4">
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark">●</span>
+    <span class="brand-name">Creeping Crawler</span>
+  </a>
+  <nav class="nav-links">
+    <a href="/parser" class="{% if request.url.path.startswith('/parser') %}active{% endif %}">Parser &amp; Evaluation</a>
+    <a href="/gs-builder" class="{% if request.url.path.startswith('/gs-builder') %}active{% endif %}">Gold Standard</a>
+    <a href="/stats" class="{% if request.url.path == '/stats' %}active{% endif %}">Stats</a>
+  </nav>
+</header>
+
+<main class="page">
   {% block content %}{% endblock %}
-</div>
+</main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

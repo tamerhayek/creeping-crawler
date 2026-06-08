@@ -1,35 +1,35 @@
-"""Route for the home page (GET /)."""
-
-from collections import defaultdict
-from urllib.parse import urlparse
+"""Home page (GET /)."""
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from ..client import BackendUnavailable, get_gs_urls
+from ..client import BackendUnavailable, get_domains, get_status
 from ..templates import templates
 
 router = APIRouter()
 
 
-def _group_by_domain(urls: list[str]) -> dict[str, list[str]]:
-    """Group a list of URLs by their netloc, stripping leading 'www.'."""
-    grouped: dict[str, list[str]] = defaultdict(list)
-    for url in urls:
-        netloc = urlparse(url).netloc.removeprefix("www.")
-        grouped[netloc].append(url)
-    return dict(grouped)
+GROUP_MEMBERS = [
+    {"name": "Lapo Siciliani", "id": "2007890"},
+    {"name": "Fabio Priori", "id": "1938446"},
+    {"name": "Tamer Hayek", "id": "1897438"},
+]
 
 
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    """Render the home page with the URL input form and GS dropdown."""
+    """Render the home page with system status and supported domains."""
     try:
-        gs_urls = get_gs_urls()
+        status = get_status()
+        domains = get_domains()
     except BackendUnavailable:
-        return templates.TemplateResponse(request=request, name="error.html.jinja", status_code=503)
+        status, domains = {"backend": "error", "database": "error", "ollama": "error"}, []
     return templates.TemplateResponse(
         request=request,
         name="index.html.jinja",
-        context={"gs_urls": gs_urls, "gs_by_domain": _group_by_domain(gs_urls)},
+        context={
+            "group_members": GROUP_MEMBERS,
+            "status": status,
+            "domains": domains,
+        },
     )

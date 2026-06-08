@@ -1,124 +1,70 @@
 {% extends "base.html.jinja" %}
-{% block title %} — Evaluate{% endblock %}
+{% block title %} — Home{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-lg-8">
-    <h1 class="mb-1">Creeping Crawler</h1>
-    <p class="text-muted mb-4">
-      Crawl a URL, parse the content, and evaluate against the Gold Standard when available.
-    </p>
+<section class="hero">
+  <h1>Creeping Crawler</h1>
+  <p class="hero-sub">
+    Pipeline end-to-end per acquisire, parsare e valutare la qualità di contenuti web
+    da sorgenti eterogenee, con valutazione automatica via LLM judge.
+  </p>
+</section>
 
-    {% if gs_by_domain %}
-    <!-- Gold Standard quick-select — one tab per domain -->
-    <div class="card shadow-sm mb-3" id="gsCard">
-      <div class="card-body p-4">
-        <div class="d-flex align-items-center mb-3">
-          <span class="gs-dot me-1">●</span>
-          <span class="fw-semibold small">Gold Standard URLs</span>
-        </div>
+<section class="card-grid">
+  <a href="/parser" class="nav-card">
+    <span class="nav-card-icon">⟐</span>
+    <h2>Parser &amp; Evaluation</h2>
+    <p>Testa il parser su un URL live o dal database e confronta col Gold Standard.</p>
+  </a>
+  <a href="/gs-builder" class="nav-card">
+    <span class="nav-card-icon">◇</span>
+    <h2>Gold Standard</h2>
+    <p>Costruisci e gestisci il dataset di riferimento: carica HTML, salva il testo pulito.</p>
+  </a>
+  <a href="/stats" class="nav-card">
+    <span class="nav-card-icon">▥</span>
+    <h2>Stats</h2>
+    <p>Panoramica aggregata: conteggi, metriche medie e judge score per dominio.</p>
+  </a>
+</section>
 
-        <!-- Domain tabs -->
-        <ul class="nav gs-pills flex-nowrap overflow-auto mb-3" id="gsTabs" role="tablist">
-          {% for domain, urls in gs_by_domain.items() %}
-          <li class="nav-item flex-shrink-0" role="presentation">
-            <button
-              class="nav-link gs-pill {% if loop.first %}active{% endif %}"
-              id="gs-tab-{{ loop.index }}"
-              data-bs-toggle="pill"
-              data-bs-target="#gs-pane-{{ loop.index }}"
-              type="button"
-              role="tab"
-              aria-controls="gs-pane-{{ loop.index }}"
-              aria-selected="{{ 'true' if loop.first else 'false' }}"
-            >
-              {{ domain }}
-              <span class="gs-pill-count">{{ urls | length }}</span>
-            </button>
-          </li>
-          {% endfor %}
-        </ul>
-
-        <!-- Domain panes -->
-        <div class="tab-content">
-          {% for domain, urls in gs_by_domain.items() %}
-          <div
-            class="tab-pane fade {% if loop.first %}show active{% endif %}"
-            id="gs-pane-{{ loop.index }}"
-            role="tabpanel"
-            aria-labelledby="gs-tab-{{ loop.index }}"
-          >
-            <select class="form-select gs-domain-select">
-              <option value="">Select a URL…</option>
-              {% for u in urls %}
-              <option value="{{ u }}">{{ u }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          {% endfor %}
-        </div>
-
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Main form -->
-    <div class="card shadow-sm" id="mainCard">
-      <div class="card-body p-4">
-        <form action="/compare" method="get" id="compareForm">
-          <div class="mb-4">
-            <label for="urlInput" class="form-label fw-semibold">URL</label>
-            <input type="url" class="form-control" id="urlInput" name="url"
-                   placeholder="https://it.wikipedia.org/wiki/…" autocomplete="off" required>
-            <div class="form-text mt-1" id="gsHint" style="display:none;">
-              <span class="badge gs-badge">Gold Standard</span> Metric evaluation will be included.
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary px-4" id="submitBtn" disabled>
-            Crawl
-          </button>
-        </form>
-      </div>
-    </div>
-
+<section class="info-row">
+  <div class="info-card">
+    <h3>Gruppo</h3>
+    <ul class="badge-list">
+      {% for member in group_members %}
+      <li><span class="member-name">{{ member.name }}</span><span class="member-id">{{ member.id }}</span></li>
+      {% endfor %}
+    </ul>
   </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-  const gsUrls = new Set({{ gs_urls | tojson }});
-  const urlInput = document.getElementById('urlInput');
-  const submitBtn = document.getElementById('submitBtn');
-  const gsHint = document.getElementById('gsHint');
-  const mainCard = document.getElementById('mainCard');
+  <div class="info-card">
+    <h3>System status</h3>
+    <ul class="status-list">
+      <li>
+        <span class="status-dot {{ 'ok' if status.backend == 'ok' else 'error' }}"></span>
+        Backend
+      </li>
+      <li>
+        <span class="status-dot {{ 'ok' if status.database == 'ok' else 'error' }}"></span>
+        MariaDB
+      </li>
+      <li>
+        <span class="status-dot {{ 'ok' if status.ollama == 'ok' else 'error' }}"></span>
+        Ollama
+      </li>
+    </ul>
+  </div>
 
-  function update() {
-    const val = urlInput.value.trim();
-    const isGs = gsUrls.has(val);
-    const hasUrl = val.length > 0;
-
-    submitBtn.disabled = !hasUrl;
-    submitBtn.textContent = isGs ? 'Compare' : 'Crawl';
-    submitBtn.classList.toggle('btn-primary', !isGs);
-    submitBtn.classList.toggle('btn-gold', isGs);
-    mainCard.classList.toggle('card-gs', isGs);
-    gsHint.style.display = isGs ? 'block' : 'none';
-  }
-
-  urlInput.addEventListener('input', update);
-
-  {% if gs_by_domain %}
-  document.querySelectorAll('.gs-domain-select').forEach(function (sel) {
-    sel.addEventListener('change', function () {
-      if (this.value) {
-        urlInput.value = this.value;
-        this.value = '';
-        update();
-      }
-    });
-  });
-  {% endif %}
-</script>
+  <div class="info-card">
+    <h3>Domini supportati</h3>
+    <ul class="domain-list">
+      {% for domain in domains %}
+      <li>{{ domain }}</li>
+      {% else %}
+      <li class="muted">Nessun dominio configurato.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
 {% endblock %}
