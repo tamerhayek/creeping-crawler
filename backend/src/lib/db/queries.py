@@ -323,7 +323,12 @@ def get_avg_eval_per_domain() -> dict[str, dict]:
 
 
 def get_avg_judge_per_domain() -> dict[str, dict]:
-    """Return the average judge score for each domain."""
+    """Return the average judge score for each domain.
+
+    Judge scores are populated on demand by ``/full_gs_eval``. When the cache
+    is still empty, fall back to ``judge_score: 0.0`` for every gold_standard
+    domain so that ``/db_stats`` always exposes a non-empty object.
+    """
     with get_connection() as connection:
         cursor = connection.cursor()
         cursor.execute(
@@ -335,4 +340,13 @@ def get_avg_judge_per_domain() -> dict[str, dict]:
             GROUP BY w.domain
             """
         )
-        return {row[0]: {"judge_score": float(row[1])} for row in cursor.fetchall()}
+        averages = {row[0]: {"judge_score": float(row[1])} for row in cursor.fetchall()}
+        if averages:
+            return averages
+        cursor.execute(
+            """
+            SELECT DISTINCT w.domain FROM gold_standard g
+            JOIN web_resources w ON w.url = g.url
+            """
+        )
+        return {row[0]: {"judge_score": 0.0} for row in cursor.fetchall()}
