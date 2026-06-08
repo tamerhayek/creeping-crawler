@@ -1,48 +1,23 @@
-"""Gold standard URL and domain management.
+"""Gold standard URL and domain queries.
 
-Reads all GS entries from the gs_data/ directory (JSON files, one per domain).
-The gs_data/ path is resolved automatically:
-  - In Docker: mounted at /gs_data
-  - Locally:   four levels up from this file → project root / gs_data
+Supported domains are read from ``domains.json`` (a domain is "supported"
+when a dedicated parser exists for it). Gold standard URLs themselves are
+read from the ``gold_standard`` table in MariaDB; the table is seeded from
+``gs_data/*_gs.json`` at first boot by ``db.init_loader``.
 """
 
 import json
 from pathlib import Path
-from urllib.parse import urlparse
 
-
-def _gs_data_dir() -> Path:
-    """Return the path to the gs_data/ directory."""
-    docker_path = Path("/gs_data")
-    if docker_path.exists():
-        return docker_path
-    # gold_standard/ → lib/ → src/ → backend/ → project root
-    return Path(__file__).resolve().parents[4] / "gs_data"
-
-
-def get_all_entries() -> list[dict]:
-    """Load and return all gold standard entries from every *_gs.json file."""
-    entries = []
-    for json_file in _gs_data_dir().glob("*_gs.json"):
-        text = json_file.read_text(encoding="utf-8").strip()
-        if not text:
-            continue
-        entries.extend(json.loads(text))
-    return entries
-
-
-def get_available_urls() -> list[str]:
-    """Return a sorted list of all URLs present in the gold standard."""
-    return sorted({e["url"] for e in get_all_entries()})
+from ..db import queries
 
 
 def _domains_file() -> Path:
     """Return the path to domains.json."""
-    # In Docker: WORKDIR /app, domains.json is copied there
     docker_path = Path("/app/domains.json")
     if docker_path.exists():
         return docker_path
-    # Locally: gold_standard/ → lib/ → src/ → backend/ → project root
+    # gold_standard/ → lib/ → src/ → backend/ → project root
     return Path(__file__).resolve().parents[4] / "domains.json"
 
 
@@ -52,10 +27,15 @@ def get_domains() -> list[str]:
 
 
 def is_supported_domain(domain: str) -> bool:
-    """Return True if the domain has at least one gold standard entry."""
+    """Return True if the domain has a dedicated parser."""
     return domain in get_domains()
+
+
+def get_available_urls() -> list[str]:
+    """Return all URLs currently present in the gold standard."""
+    return queries.get_all_urls()
 
 
 def get_urls_for_domain(domain: str) -> list[str]:
     """Return all GS URLs belonging to the given domain."""
-    return [url for url in get_available_urls() if urlparse(url).netloc == domain]
+    return queries.get_urls_by_domain(domain)
