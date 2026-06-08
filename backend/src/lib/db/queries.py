@@ -60,6 +60,20 @@ def get_all_urls() -> list[str]:
         return [row[0] for row in cursor.fetchall()]
 
 
+def get_distinct_gold_standard_domains() -> list[str]:
+    """Return every distinct domain that has at least one gold_standard row (sorted)."""
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT DISTINCT w.domain FROM gold_standard g
+            JOIN web_resources w ON w.url = g.url
+            ORDER BY w.domain
+            """
+        )
+        return [row[0] for row in cursor.fetchall()]
+
+
 def get_urls_by_domain(domain: str) -> list[str]:
     """Return all gold standard URLs belonging to a domain (sorted)."""
     with get_connection() as connection:

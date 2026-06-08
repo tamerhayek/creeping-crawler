@@ -28,7 +28,7 @@ output/
 *.swp
 *.swo
 
-# Docker files (non servono nel contesto)
+# Docker files (not needed inside the build context)
 **/Dockerfile
 **/.dockerignore
 docker-compose*.yml
@@ -40,16 +40,16 @@ docker-compose*.yaml
 .env
 .env.local
 
-# File di servizio degli altri container (non servono dentro backend/frontend image)
-init.sql
-entrypoint.sh
+# Service files for sibling containers (not needed inside the backend/frontend images)
+mariadb_data/
+ollama_data/
 
-# Bundle e documenti pesanti che non vanno nelle image dei servizi Python
+# Heavy bundles and documents that don't belong in the Python service images
 docs/
 lab-grader.tar.gz
 report.pdf
 report.tex
 
-# Documentazione e tooling locale
+# Local documentation and tooling
 *.md
 Makefile

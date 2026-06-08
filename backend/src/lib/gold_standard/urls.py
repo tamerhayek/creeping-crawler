@@ -1,33 +1,22 @@
 """Gold standard URL and domain queries.
 
-Supported domains are read from ``domains.json`` (a domain is "supported"
-when a dedicated parser exists for it). Gold standard URLs themselves are
-read from the ``gold_standard`` table in MariaDB; the table is seeded from
-``gs_data/*_gs.json`` at first boot by ``db.init_loader``.
+Supported domains are derived from the ``gold_standard`` / ``web_resources``
+tables in MariaDB: a domain is "supported" as soon as at least one gold
+standard entry exists for it. The tables are seeded from ``gs_data/*_gs.json``
+at first boot by ``db.init_loader``; new domains added at runtime via
+``/add_web_resource`` + ``/add_gold_standard`` become supported immediately.
 """
-
-import json
-from pathlib import Path
 
 from ..db import queries
 
 
-def _domains_file() -> Path:
-    """Return the path to domains.json."""
-    docker_path = Path("/app/domains.json")
-    if docker_path.exists():
-        return docker_path
-    # gold_standard/ → lib/ → src/ → backend/ → project root
-    return Path(__file__).resolve().parents[4] / "domains.json"
-
-
 def get_domains() -> list[str]:
-    """Return the list of supported domains from domains.json."""
-    return json.loads(_domains_file().read_text(encoding="utf-8"))["domains"]
+    """Return every domain that has at least one gold standard entry."""
+    return queries.get_distinct_gold_standard_domains()
 
 
 def is_supported_domain(domain: str) -> bool:
-    """Return True if the domain has a dedicated parser."""
+    """Return True if the domain has at least one gold standard entry."""
     return domain in get_domains()
 
 

@@ -10,7 +10,7 @@ services:
       MARIADB_PASSWORD: creeping_crawler
     volumes:
       - mariadb-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mariadb_data/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
@@ -25,7 +25,7 @@ services:
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     volumes:
       - ollama-data:/root/.ollama
-      - ./entrypoint.sh:/entrypoint.sh
+      - ./ollama_data/entrypoint.sh:/entrypoint.sh
     healthcheck:
       # Considera healthy solo quando il modello è già stato scaricato
       # (al primo boot il pull può richiedere alcuni minuti).
