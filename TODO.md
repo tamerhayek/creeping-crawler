@@ -10,3 +10,4 @@
 - [ ] Aggiornare Report
 - [ ] Abbellire UI con stati di caricamento
 - [ ] Rimetti tendina per selezione URL
+- [ ] Pinnare versione MariaDB e Ollama

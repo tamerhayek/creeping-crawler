@@ -11,11 +11,26 @@ def build_judge_prompt(parsed_text: str, gold_text: str) -> str:
     parsed_truncated = parsed_text[:MAX_TEXT_CHARS]
     gold_truncated = gold_text[:MAX_TEXT_CHARS]
     return (
-        "Valuta la qualità del seguente testo estratto da una pagina web.\n\n"
-        "Testo estratto dal parser:\n"
-        f"{parsed_truncated}\n\n"
-        "Testo di riferimento (Gold Standard):\n"
-        f"{gold_truncated}\n\n"
-        "Rispondi SOLO con un JSON nel seguente formato:\n"
-        '{"score": <intero tra 1 e 5>, "feedback": "<breve descrizione della qualità del testo>"}'
+        f"""
+        Sei un valutatore della qualità di parsing web.
+
+        Confronta il DOCUMENTO PARSATO con il GOLD STANDARD e valuta quanto il parsing abbia preservato correttamente il contenuto.
+
+        Identifica:
+
+        contenuti mancanti;
+        contenuti errati o aggiunti;
+        rumore (menu, footer, banner, cookie notice, pubblicità);
+        duplicazioni;
+        problemi strutturali (titoli, sezioni, liste, tabelle, ordine dei contenuti).
+        
+        Testo estratto dal parser:
+        {parsed_truncated}
+        
+        Testo di riferimento (Gold Standard):
+        {gold_truncated}
+
+        Rispondi SOLO con un JSON nel seguente formato:
+        {"score": <intero tra 1 e 5>, "feedback": "<breve descrizione della qualità del testo>"}
+        """
     )

@@ -95,7 +95,7 @@ freeze: freeze-backend freeze-frontend
 # ─── Grader ──────────────────────────────────────────────────────────────────
 
 GRADER_IMAGE ?= lab-grader.tar.gz
-GRADER_TAG   := lab-grader-progetto-finale:1.0.4
+GRADER_TAG   := lab-grader-progetto-finale:1.0.9
 
 STUDENT_ID ?=
 
