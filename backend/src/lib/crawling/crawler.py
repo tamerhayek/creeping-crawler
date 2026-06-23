@@ -15,6 +15,27 @@ from .domains.registry import config_for as _domain_config
 
 _DEFAULT_CONFIG = CrawlerRunConfig(magic=True)
 
+# A single browser is started once and reused for every crawl, instead of
+# launching and closing Chromium on each request (which was the slowest part).
+_crawler: AsyncWebCrawler | None = None
+
+
+async def get_crawler() -> AsyncWebCrawler:
+    """Return the shared crawler, starting its browser on first use."""
+    global _crawler
+    if _crawler is None:
+        _crawler = AsyncWebCrawler(config=BrowserConfig(headless=True))
+        await _crawler.start()
+    return _crawler
+
+
+async def close_crawler() -> None:
+    """Close the shared crawler and its browser (called on shutdown)."""
+    global _crawler
+    if _crawler is not None:
+        await _crawler.close()
+        _crawler = None
+
 
 def _config_for(url: str) -> CrawlerRunConfig:
     """Return the domain-specific config, or the default magic config."""
@@ -61,11 +82,10 @@ async def fetch_page(url: str) -> PageContent:
     Raises:
         RuntimeError: if Crawl4AI reports a failed crawl.
     """
-    browser_cfg = BrowserConfig(headless=True)
     run_cfg = _config_for(url)
     run_cfg.cache_mode = CacheMode.BYPASS
-    async with AsyncWebCrawler(config=browser_cfg) as crawler:
-        result = await crawler.arun(url=url, config=run_cfg)
+    crawler = await get_crawler()
+    result = await crawler.arun(url=url, config=run_cfg)
 
     if not result.success:
         raise RuntimeError(f"Crawl failed for {url}: {result.error_message}")
@@ -99,11 +119,10 @@ async def fetch_page_from_html(url: str, html_text: str) -> PageContent:
     Raises:
         RuntimeError: if Crawl4AI fails to process the HTML.
     """
-    browser_cfg = BrowserConfig(headless=True)
     run_cfg = _html_only_config(url)
     run_cfg.cache_mode = CacheMode.BYPASS
-    async with AsyncWebCrawler(config=browser_cfg) as crawler:
-        result = await crawler.arun(url=f"raw:{html_text}", config=run_cfg)
+    crawler = await get_crawler()
+    result = await crawler.arun(url=f"raw:{html_text}", config=run_cfg)
 
     if not result.success:
         raise RuntimeError(f"HTML processing failed: {result.error_message}")

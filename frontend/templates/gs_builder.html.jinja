@@ -9,7 +9,7 @@
 {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
 {% if load_error %}<div class="alert error"><strong>Errore caricamento HTML:</strong> {{ load_error }}</div>{% endif %}
 
-<form action="/gs-builder" method="get" class="form-card">
+<form action="/gs-builder" method="get" class="form-card js-loading" data-loading="Caricamento HTML in corso…">
   <div class="form-row">
     <div class="field">
       <label for="domainSelect">Dominio</label>
@@ -28,7 +28,7 @@
 </form>
 
 {% if loaded_html %}
-<form action="/gs-builder/save" method="post" class="form-card">
+<form action="/gs-builder/save" method="post" class="form-card js-loading" data-loading="Salvataggio in corso…">
   <input type="hidden" name="domain" value="{{ selected_domain }}">
   <input type="hidden" name="url" value="{{ selected_url }}">
   <input type="hidden" name="html_text" value="{{ loaded_html | e }}">
@@ -70,7 +70,7 @@
     <h3>Conferma eliminazione</h3>
     <p>Vuoi eliminare questa entry dal Gold Standard?</p>
     <p class="modal-url" id="deleteModalUrl"></p>
-    <form action="/gs-builder/delete" method="post" class="modal-actions">
+    <form action="/gs-builder/delete" method="post" class="modal-actions js-loading" data-loading="Eliminazione in corso…">
       <input type="hidden" name="domain" value="{{ selected_domain }}">
       <input type="hidden" name="url" id="deleteModalInput">
       <button type="button" class="btn-secondary" id="deleteModalCancel">Annulla</button>

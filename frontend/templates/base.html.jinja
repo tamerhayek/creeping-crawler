@@ -27,6 +27,41 @@
   {% block content %}{% endblock %}
 </main>
 
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="loading-box">
+    <span class="spinner"></span>
+    <p id="loadingText">Operazione in corso…</p>
+  </div>
+</div>
+
+<script>
+  // Any form with class "js-loading" shows the overlay and a spinner on its
+  // submit button while the request is running. The message can be customised
+  // with a data-loading attribute on the form.
+  (function () {
+    var overlay = document.getElementById('loadingOverlay');
+    var overlayText = document.getElementById('loadingText');
+    var forms = document.querySelectorAll('form.js-loading');
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].addEventListener('submit', function () {
+        overlayText.textContent = this.getAttribute('data-loading') || 'Operazione in corso…';
+        overlay.hidden = false;
+        var submitButton = this.querySelector('button[type="submit"]');
+        if (submitButton) {
+          submitButton.classList.add('btn-loading');
+        }
+        // Disable every button in the form so it can't be clicked again while
+        // the request is running. The submission already started, so disabling
+        // here does not cancel it.
+        var buttons = this.querySelectorAll('button');
+        for (var b = 0; b < buttons.length; b++) {
+          buttons[b].disabled = true;
+        }
+      });
+    }
+  })();
+</script>
+
 {% block scripts %}{% endblock %}
 </body>
 </html>

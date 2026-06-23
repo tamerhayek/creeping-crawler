@@ -7,12 +7,14 @@ Startup sequence (lifespan):
     1. wait for MariaDB and open the connection pool
     2. seed the gold standard tables from gs_data/ on first boot
     3. precompute and cache quantitative metrics for every GS URL
+    4. start the shared crawler browser so the first parse is fast
 """
 
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from .lib import close_crawler, get_crawler
 from .lib.db import close_pool, init_pool, populate_if_empty
 from .lib.precompute import precompute_quantitative_evaluations
 from .routes import (
@@ -33,7 +35,9 @@ async def lifespan(app: FastAPI):
     precomputed = await precompute_quantitative_evaluations()
     if precomputed:
         print(f"[startup] precomputed {precomputed} quantitative evaluations", flush=True)
+    await get_crawler()
     yield
+    await close_crawler()
     close_pool()
 
 
