@@ -3,7 +3,7 @@
 Inputs are truncated to ``MAX_TEXT_CHARS`` to keep CPU inference fast.
 """
 
-MAX_TEXT_CHARS = 1500
+MAX_TEXT_CHARS = 1000
 
 
 def build_judge_prompt(parsed_text: str, gold_text: str) -> str:
