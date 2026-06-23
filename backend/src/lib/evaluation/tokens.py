@@ -11,13 +11,29 @@ import mistune
 from bs4 import BeautifulSoup
 
 
+_NUMBER_RE = re.compile(r'[+\-]?\d[\d.,]*\d%?|[+\-]?\d%?')
+
+
+def _canonicalize_number(token: str) -> str:
+    """Drop thousand/decimal separators so 1,400 and 1.400 are the same token."""
+    core = token.strip("()€£")
+    if _NUMBER_RE.fullmatch(core):
+        return re.sub(r'[.,]', '', core.rstrip('%'))
+    return token
+
+
 def extract_unique_tokens(text: str) -> set[str]:
     """Return the set of unique whitespace-separated tokens in the text.
 
-    Newlines are treated as spaces. Empty strings are discarded.
+    Newlines are treated as spaces. Empty strings are discarded. Numbers are
+    normalised so they compare equal regardless of locale formatting.
     """
     normalized = text.replace("\n", " ")
-    return {token for token in normalized.split(" ") if token}
+    return {
+        _canonicalize_number(token)
+        for token in normalized.split(" ")
+        if token
+    }
 
 
 _QUOTE_TABLE = str.maketrans({

@@ -4,7 +4,7 @@ from crawl4ai import CrawlerRunConfig
 
 CONFIG = CrawlerRunConfig(
     magic=True,
-    excluded_tags=["style", "script", "link", "meta", "noscript"],
+    excluded_tags=["style", "script", "link", "meta", "noscript", "img"],
     excluded_selector=(
         # Global header, navigation, scoreboard ticker
         "#header-wrapper, #global-header, #global-scoreboard, "
