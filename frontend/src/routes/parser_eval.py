@@ -27,7 +27,10 @@ def parser_eval(
     """Parse a URL (live or local), evaluate against GS if available, return results."""
     try:
         domains = get_domains()
-        all_gs_urls = [u for domain in domains for u in get_gs_urls(domain)]
+        # URLs grouped by domain, so the page can show two linked dropdowns
+        # (pick a domain, then pick one of its URLs).
+        gs_urls_by_domain = {domain: get_gs_urls(domain) for domain in domains}
+        all_gs_urls = [u for urls in gs_urls_by_domain.values() for u in urls]
 
         result = None
         if url.strip():
@@ -57,7 +60,7 @@ def parser_eval(
         request=request,
         name="parser_eval.html.jinja",
         context={
-            "all_gs_urls": all_gs_urls,
+            "gs_urls_by_domain": gs_urls_by_domain,
             "result": result,
             "selected_url": url.strip(),
             "selected_mode": mode,

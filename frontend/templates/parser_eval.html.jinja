@@ -5,13 +5,31 @@
 <h1 class="page-title">Parser &amp; Evaluation</h1>
 <p class="page-sub">Esegui il parser su un URL e confronta l'output col Gold Standard.</p>
 
+<div class="form-card" style="margin-bottom:1.5rem;">
+  <div class="field">
+    <label>Scegli un URL dal Gold Standard</label>
+    <div class="mode-toggle">
+      {% for d in gs_urls_by_domain.keys() %}
+      <label class="mode-option">
+        <input type="radio" name="gsDomain" value="{{ d }}">
+        <span>{{ d }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field" style="margin-top:1rem;">
+    <label for="urlSelect">URL</label>
+    <select id="urlSelect">
+      <option value="">— seleziona un URL —</option>
+    </select>
+  </div>
+</div>
+
 <form action="/parser" method="get" class="form-card">
   <div class="field">
     <label for="urlInput">URL</label>
-    <input type="url" id="urlInput" name="url" required value="{{ selected_url }}" placeholder="https://it.wikipedia.org/wiki/…" list="gsUrls">
-    <datalist id="gsUrls">
-      {% for u in all_gs_urls %}<option value="{{ u }}">{% endfor %}
-    </datalist>
+    <input type="url" id="urlInput" name="url" required value="{{ selected_url }}" placeholder="https://it.wikipedia.org/wiki/…">
   </div>
 
   <div class="field" style="margin-top:1rem;">
@@ -158,6 +176,78 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  // URLs of the Gold Standard, grouped by domain. Picking a domain badge fills
+  // the URL dropdown; picking a URL copies it into the main input field.
+  var urlsByDomain = {{ gs_urls_by_domain | tojson }};
+  var selectedUrl = {{ selected_url | tojson }};
+
+  var urlInput = document.getElementById('urlInput');
+  var urlSelect = document.getElementById('urlSelect');
+  var domainRadios = document.querySelectorAll('input[name="gsDomain"]');
+
+  function fillUrls(domain) {
+    urlSelect.innerHTML = '<option value="">— seleziona un URL —</option>';
+    var urls = urlsByDomain[domain] || [];
+    for (var i = 0; i < urls.length; i++) {
+      var option = document.createElement('option');
+      option.value = urls[i];
+      option.textContent = urls[i];
+      urlSelect.appendChild(option);
+    }
+  }
+
+  for (var i = 0; i < domainRadios.length; i++) {
+    domainRadios[i].addEventListener('change', function () {
+      fillUrls(this.value);
+    });
+  }
+
+  // Picking a URL fills the input below, then the dropdown resets to its
+  // placeholder (the chosen domain badge stays selected).
+  urlSelect.addEventListener('change', function () {
+    if (this.value) {
+      urlInput.value = this.value;
+      this.selectedIndex = 0;
+    }
+  });
+
+  function activateDomain(domain) {
+    for (var j = 0; j < domainRadios.length; j++) {
+      if (domainRadios[j].value === domain) {
+        domainRadios[j].checked = true;
+      }
+    }
+    fillUrls(domain);
+  }
+
+  // On load: keep the badge of the used URL's domain active after a search,
+  // otherwise start with Wikipedia selected (or the first domain available).
+  var startDomain = null;
+  if (selectedUrl) {
+    for (var domain in urlsByDomain) {
+      if (urlsByDomain[domain].indexOf(selectedUrl) !== -1) {
+        startDomain = domain;
+        break;
+      }
+    }
+  }
+  if (!startDomain) {
+    for (var domain in urlsByDomain) {
+      if (domain.indexOf('wikipedia') !== -1) {
+        startDomain = domain;
+        break;
+      }
+    }
+  }
+  if (!startDomain && domainRadios.length > 0) {
+    startDomain = domainRadios[0].value;
+  }
+  if (startDomain) {
+    activateDomain(startDomain);
+  }
+</script>
+
 {% if result and not result.error and result.gold_text %}
 <script>
   var __cleanedText = {{ result.cleaned_text | tojson }};

@@ -9,5 +9,5 @@
 - [ ] Verificare tutte le API
 - [ ] Aggiornare Report
 - [ ] Abbellire UI con stati di caricamento
-- [ ] Rimetti tendina per selezione URL
+- [x] Rimetti tendina per selezione URL
 - [x] Pinnare versione MariaDB e Ollama
