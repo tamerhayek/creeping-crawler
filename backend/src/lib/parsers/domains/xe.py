@@ -24,34 +24,58 @@ class XeParser(ContentParser):
         dropped)
     """
 
+    # Headings that terminate the content (everything after is boilerplate).
     EXCLUDED_SECTIONS = frozenset({
         "related articles", "related posts", "you may also like",
         "sign up", "get started", "popular currencies",
         "xe is trusted by millions around the globe",
         "send money destinations",
+        "international money transfers done right",
+        
     })
 
-    # Plain-text (non-`#`)
+    # Headings to drop in place without terminating the document.
+    _DROP_SECTIONS = frozenset({
+        "compare and save",
+    })
+
+    # Plain-text (non-`#`) lines that terminate the content.
     _TERMINAL_LINES = frozenset({
         "send money destinations",
         "xe is trusted by millions around the globe",
         "trusted by",
+        "loading popular currency pairs...",
     })
 
-    # Plain-text lines that should be dropped individually
+    # Plain-text lines that should be dropped individually.
     _DROP_LINES = frozenset({
         "did you know you can send money abroad with xe?",
         "add currency",
-        "learn more",
     })
 
-    # Links the gold standard strips out
+    # Standalone boilerplate paragraphs (matched on a line prefix)
+    _DROP_PREFIXES = (
+        "we use the mid-market rate",
+        "when you compare xe to leading banks",
+        "the comparison savings are based on",
+    )
+
+    # Links the gold standard strips out.
     _SKIP_LINK_PATTERNS = (
         re.compile(r'\[\s*Speak to an FX specialist', re.IGNORECASE),
         re.compile(r'\[\s*Download the Global Currency Outlook', re.IGNORECASE),
-        # "[Learn more](/send-money/)"
-        re.compile(r'^\s*\[\s*Learn more\s*\]\(', re.IGNORECASE),
     )
+
+    # Inline image: ``![alt](url)``.
+    _IMAGE_RE = re.compile(r'!\[([^\]]*)\]\([^)]*\)')
+    # Site logo image, dropped entirely
+    _LOGO_RE = re.compile(r'!\[[^\]]*\]\([^)]*logo-xe[^)]*\)', re.IGNORECASE)
+    # Inline link glued to preceding non-space text: ``rates[Send money](url)``.
+    _GLUED_LINK_RE = re.compile(r'(\S)(\[[^\]]+\]\([^)]*\))')
+    # Adjacent inline elements rendered without whitespace produce glued
+    # camelCase tokens (``EuroEUR``, ``nationwideNationwide``); split them
+    # back at the lowercase/uppercase boundary
+    _CAMEL_RE = re.compile(r'(?<=[a-z])(?=[A-Z])')
 
     # Markdown table separator row, e.g. "| --- | --- |".
     _TABLE_SEP_RE = re.compile(r'^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?$')
@@ -66,8 +90,21 @@ class XeParser(ContentParser):
         cells = [c.strip() for c in line.strip().strip('|').split('|')]
         return [c for c in cells if c]
 
-    def parse(self, url: str, markdown: str) -> str:
+    def _preprocess(self, markdown: str) -> str:
+        """Normalise images and glued links before line-level filtering."""
         markdown = self._BOLD_PUNCT_RE.sub(r'**\1', markdown)
+        markdown = self._LOGO_RE.sub('', markdown)
+        # Keep image alt text
+        
+        markdown = self._IMAGE_RE.sub(r'\1', markdown)
+        # Break links that are glued onto preceding text onto their own line.
+        markdown = self._GLUED_LINK_RE.sub(r'\1\n\2', markdown)
+        # Separate glued camelCase tokens from adjacent inline elements.
+        markdown = self._CAMEL_RE.sub(' ', markdown)
+        return markdown
+
+    def parse(self, url: str, markdown: str) -> str:
+        markdown = self._preprocess(markdown)
         out: list[str] = []
 
         for raw in markdown.split("\n"):
@@ -79,11 +116,16 @@ class XeParser(ContentParser):
                 heading = line.lstrip("#").strip().lower()
                 if heading in self.EXCLUDED_SECTIONS:
                     break
+                if heading in self._DROP_SECTIONS:
+                    continue
 
             if lowered in self._TERMINAL_LINES:
                 break
 
             if lowered in self._DROP_LINES:
+                continue
+
+            if any(lowered.startswith(p) for p in self._DROP_PREFIXES):
                 continue
 
             if self._HR_RE.match(stripped):

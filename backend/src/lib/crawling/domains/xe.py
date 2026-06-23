@@ -39,7 +39,9 @@ CONFIG = CrawlerRunConfig(
         # "Manage your currencies on the go with the Xe app"
         "div[class*='mb-24'][class*='from-blue-900'], "
         # Cookie / GDPR consent popup
-        "div[class*='animate-slideFromLeft']"
+        "div[class*='animate-slideFromLeft'], "
+        # Inline Xe logo rendered as an SVG
+        "svg[aria-label='Xe']"
     ),
     remove_forms=True,
 )
