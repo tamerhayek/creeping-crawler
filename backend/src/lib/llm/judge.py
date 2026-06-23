@@ -18,13 +18,16 @@ THINK_BLOCK_PATTERN = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECAS
 JSON_OBJECT_PATTERN = re.compile(r"\{.*\}", re.DOTALL)
 
 # Forces the model to answer with a valid JSON object in this exact shape.
+# "feedback" is listed BEFORE "score" on purpose: the model generates the
+# fields in this order, so it writes its analysis first and only then picks a
+# score consistent with it (instead of anchoring to a default value).
 JUDGE_SCHEMA = {
     "type": "object",
     "properties": {
-        "score": {"type": "integer", "minimum": 1, "maximum": 5},
         "feedback": {"type": "string"},
+        "score": {"type": "integer", "minimum": 1, "maximum": 5},
     },
-    "required": ["score", "feedback"],
+    "required": ["feedback", "score"],
 }
 
 
