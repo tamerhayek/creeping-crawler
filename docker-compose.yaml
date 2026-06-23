@@ -1,6 +1,6 @@
 services:
   mariadb:
-    image: mariadb:11
+    image: mariadb:11.8.8
     ports:
       - "3306:3306"
     environment:
@@ -9,7 +9,7 @@ services:
       MARIADB_USER: creeping_crawler
       MARIADB_PASSWORD: creeping_crawler
     volumes:
-      - mariadb-data:/var/lib/mysql
+      - ./mariadb_data/data:/var/lib/mysql
       - ./mariadb_data/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
@@ -19,12 +19,12 @@ services:
       start_period: 30s
 
   ollama:
-    image: ollama/ollama
+    image: ollama/ollama:0.30.10
     ports:
       - "11434:11434"
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     volumes:
-      - ollama-data:/root/.ollama
+      - ./ollama_data/data:/root/.ollama
       - ./ollama_data/entrypoint.sh:/entrypoint.sh
     healthcheck:
       # Considera healthy solo quando il modello è già stato scaricato
@@ -64,7 +64,3 @@ services:
       BACKEND_URL: http://backend:8003
     depends_on:
       - backend
-
-volumes:
-  mariadb-data:
-  ollama-data:

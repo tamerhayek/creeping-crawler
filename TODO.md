@@ -1,13 +1,13 @@
 - [ ] Verificare correttezza URL nel DB anche con search params diversi
-- [ ] Volumi DB in cartelle locali
+- [x] Volumi DB in cartelle locali
 - [ ] Controllare bene giudizio LLM
 - [ ] Semplificare codice (es. Maria DB connection)
 - [ ] Verificare LLM Eval
 - [ ] Verificare LLM modelli
-- [ ] Verificare se si puo accorciare il testo da dare all'LLM (Vedi slide 35)
+- [ ] Vedere se si puo accorciare il testo da dare all'LLM (Vedi slide 35)
 - [ ] Verificare Crawler e Parser
 - [ ] Verificare tutte le API
 - [ ] Aggiornare Report
 - [ ] Abbellire UI con stati di caricamento
 - [ ] Rimetti tendina per selezione URL
-- [ ] Pinnare versione MariaDB e Ollama
+- [x] Pinnare versione MariaDB e Ollama
