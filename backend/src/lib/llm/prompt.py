@@ -30,7 +30,7 @@ def build_judge_prompt(parsed_text: str, gold_text: str) -> str:
         Testo di riferimento (Gold Standard):
         {gold_truncated}
 
-        Rispondi SOLO con un JSON nel seguente formato:
+        Rispondi SOLO con un JSON nel seguente formato (il feedback deve essere una o due frasi al massimo):
         {{"score": <intero tra 1 e 5>, "feedback": "<breve descrizione della qualità del testo>"}}
         """
     )

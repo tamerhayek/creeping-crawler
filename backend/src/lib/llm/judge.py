@@ -17,6 +17,16 @@ from .prompt import build_judge_prompt
 THINK_BLOCK_PATTERN = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 JSON_OBJECT_PATTERN = re.compile(r"\{.*\}", re.DOTALL)
 
+# Forces the model to answer with a valid JSON object in this exact shape.
+JUDGE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "score": {"type": "integer", "minimum": 1, "maximum": 5},
+        "feedback": {"type": "string"},
+    },
+    "required": ["score", "feedback"],
+}
+
 
 def evaluate_with_judge(parsed_text: str, gold_text: str) -> JudgeResult:
     """Ask the LLM to score the parsed text against the gold text.
@@ -24,7 +34,7 @@ def evaluate_with_judge(parsed_text: str, gold_text: str) -> JudgeResult:
     Markdown is stripped from both inputs so the judge compares content only.
     """
     prompt = build_judge_prompt(strip_markdown(parsed_text), strip_markdown(gold_text))
-    raw_response = client.generate(prompt)
+    raw_response = client.generate(prompt, response_format=JUDGE_SCHEMA)
     return _parse_judge_response(raw_response)
 
 

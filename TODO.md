@@ -1,7 +1,7 @@
 - [ ] Verificare correttezza URL nel DB anche con search params diversi
 - [x] Volumi DB in cartelle locali
 - [ ] Controllare bene giudizio LLM
-- [ ] Semplificare codice (es. Maria DB connection)
+- [x] Semplificare codice (es. Maria DB connection)
 - [ ] Verificare LLM Eval
 - [ ] Verificare LLM modelli
 - [ ] Vedere se si puo accorciare il testo da dare all'LLM (Vedi slide 35)

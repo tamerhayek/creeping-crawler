@@ -7,14 +7,11 @@ Configuration is read from environment variables:
     DB_USER     username  (default: creeping_crawler)
     DB_PASSWORD password  (default: creeping_crawler)
 
-The pool is created lazily on the first ``init_pool()`` call. ``get_connection()``
-is a context manager that borrows a connection from the pool and returns it on exit.
+The pool is created lazily on the first ``init_pool()`` call.
 """
 
 import os
 import time
-from contextlib import contextmanager
-from typing import Iterator
 
 import mariadb
 
@@ -74,16 +71,42 @@ def close_pool() -> None:
         _connection_pool = None
 
 
-@contextmanager
-def get_connection() -> Iterator[mariadb.Connection]:
-    """Borrow a connection from the pool for the duration of the with-block."""
+def get_connection() -> mariadb.Connection:
+    """Take a connection from the pool."""
     if _connection_pool is None:
         raise RuntimeError("Connection pool not initialized; call init_pool() first")
-    connection = _connection_pool.get_connection()
-    try:
-        yield connection
-    finally:
-        connection.close()
+    return _connection_pool.get_connection()
+
+
+def fetch_one(sql: str, params: tuple = ()):
+    """Run a SELECT and return the first row (or None)."""
+    connection = get_connection()
+    query = connection.cursor()
+    query.execute(sql, params)
+    row = query.fetchone()
+    connection.close()
+    return row
+
+
+def fetch_all(sql: str, params: tuple = ()) -> list:
+    """Run a SELECT and return all the rows."""
+    connection = get_connection()
+    query = connection.cursor()
+    query.execute(sql, params)
+    rows = query.fetchall()
+    connection.close()
+    return rows
+
+
+def execute(sql: str, params: tuple = ()) -> int:
+    """Run an INSERT/UPDATE/DELETE, save the changes and return how many rows changed."""
+    connection = get_connection()
+    command = connection.cursor()
+    command.execute(sql, params)
+    connection.commit()
+    changed = command.rowcount
+    connection.close()
+    return changed
 
 
 def ping() -> bool:
@@ -94,8 +117,9 @@ def ping() -> bool:
     if _connection_pool is None:
         return False
     try:
-        with get_connection() as connection:
-            connection.ping()
+        connection = get_connection()
+        connection.ping()
+        connection.close()
         return True
     except mariadb.Error:
         return False

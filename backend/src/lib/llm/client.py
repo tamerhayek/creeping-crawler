@@ -26,19 +26,26 @@ def get_model_name() -> str:
     return _llm_config()["model"]
 
 
-def generate(prompt: str) -> str:
-    """Send a prompt to Ollama and return the raw text response."""
+def generate(prompt: str, response_format: dict | None = None) -> str:
+    """Send a prompt to Ollama and return the raw text response.
+
+    If ``response_format`` (a JSON schema) is given, Ollama forces the answer
+    to match it, so the reply is always a complete, valid JSON object.
+    """
     config = _llm_config()
+    payload = {
+        "model": config["model"],
+        "prompt": prompt,
+        "stream": False,
+        "think": False,
+        "keep_alive": -1,
+        "options": {"temperature": 0, "num_predict": 1024},
+    }
+    if response_format is not None:
+        payload["format"] = response_format
     response = requests.post(
         f"{config['host']}/api/generate",
-        json={
-            "model": config["model"],
-            "prompt": prompt,
-            "stream": False,
-            "think": False,
-            "keep_alive": -1,
-            "options": {"temperature": 0, "num_predict": 1024},
-        },
+        json=payload,
         timeout=GENERATE_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
