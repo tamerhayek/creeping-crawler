@@ -22,3 +22,6 @@ class ParseResponse(BaseModel):
     title: str
     html_text: str    # raw HTML of the page
     parsed_text: str  # clean text produced by the domain-specific parser
+    # True only when a live crawl was blocked (e.g. bot protection) and we fell
+    # back to the HTML already stored in the DB. The UI uses it to warn the user.
+    fallback_used: bool = False

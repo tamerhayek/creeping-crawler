@@ -30,7 +30,11 @@ def parser_eval(
         # URLs grouped by domain, so the page can show two linked dropdowns
         # (pick a domain, then pick one of its URLs).
         gs_urls_by_domain = {domain: get_gs_urls(domain) for domain in domains}
-        all_gs_urls = [u for urls in gs_urls_by_domain.values() for u in urls]
+        all_gs_urls = [
+            gs_url
+            for urls in gs_urls_by_domain.values()
+            for gs_url in urls
+        ]
 
         result = None
         if url.strip():

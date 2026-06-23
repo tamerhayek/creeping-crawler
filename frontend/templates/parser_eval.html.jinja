@@ -58,6 +58,14 @@
     {% set data = result.data %}
     {% set has_gs = result.gold_text is defined and result.gold_text %}
 
+    {% if data.fallback_used %}
+      <div class="alert warn">
+        <strong>Live bloccato:</strong> il sito ha rifiutato il crawl in tempo reale
+        (probabile protezione anti-bot), quindi è stato usato l'HTML salvato nel
+        database come fallback.
+      </div>
+    {% endif %}
+
     <div class="result-header">
       {% if data.title %}<h2>{{ data.title }}</h2>{% endif %}
       <a href="{{ result.url }}" target="_blank" rel="noopener" class="result-url">{{ result.url }}</a>

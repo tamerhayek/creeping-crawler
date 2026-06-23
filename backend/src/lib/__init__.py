@@ -4,7 +4,6 @@ from .crawling.crawler import (
     close_crawler,
     fetch_page,
     fetch_page_from_html,
-    fetch_page_for_url,
     get_crawler,
 )
 from .evaluation.similarity import calculate_content_metrics

@@ -12,12 +12,12 @@ from ..base import ContentParser
 class CnbcParser(ContentParser):
     """Parser for CNBC news articles.
 
-    CrawlerRunConfig handles nav/footer/ad/newsletter removal.
-    This parser stops at known boilerplate section headings and strips
-    residual boilerplate lines that can leak through markdown conversion.
+    CrawlerRunConfig already removes nav/footer/ads/newsletter blocks. This
+    parser stops at known boilerplate section headings and drops residual
+    boilerplate lines that can still leak through the markdown conversion.
     """
 
-    # Heading-level section names that signal end of editorial content.
+    # Heading-level section names that signal the end of editorial content.
     EXCLUDED_SECTIONS = frozenset({
         "related content",
         "more from cnbc",
@@ -31,16 +31,16 @@ class CnbcParser(ContentParser):
         "advertisement",
     })
 
-    # Paragraph-prefix patterns: if the LAST paragraph starts with any of these,
-    # everything from that paragraph to the end of the article is removed.
-    # Note: bold markdown prefix (**) is included since CNBC renders these as bold.
+    # If the LAST paragraph starts with one of these, that paragraph and
+    # everything after it is removed. Bold markdown (**) is allowed because
+    # CNBC renders these call-to-action lines in bold.
     _TRAILING_CUTOFF_PATTERNS: tuple[re.Pattern, ...] = (
-        # All "Want to …?" course/newsletter CTAs (bold, italic, or plain)
-        # e.g. "**Want to get ahead at work?**", "_Want to improve your communication…"
+        # "Want to ...?" course/newsletter CTAs (bold, italic, or plain)
+        # e.g. "**Want to get ahead at work?**", "_Want to improve..."
         re.compile(r"^[*_]*\s*Want to\b", re.IGNORECASE),
     )
 
-    # Regex patterns for non-editorial lines to drop outright.
+    # Non-editorial lines to drop outright.
     _SKIP_PATTERNS: tuple[re.Pattern, ...] = (
         # "Choose CNBC as your preferred source on Google News"
         re.compile(r"choose cnbc", re.IGNORECASE),
@@ -48,7 +48,7 @@ class CnbcParser(ContentParser):
         re.compile(r"follow us on", re.IGNORECASE),
         # "Subscribe to CNBC" newsletter / app CTAs
         re.compile(r"subscribe to cnbc", re.IGNORECASE),
-        # Standalone bracketed image labels  e.g. "[Photo: ...]"  or "[VIDEO]"
+        # Standalone bracketed image labels, e.g. "[Photo: ...]" or "[VIDEO]"
         re.compile(r"^\[(?:photo|video|image|watch)[^\]]*\]\s*$", re.IGNORECASE),
         # Lines that are only a markdown link with no surrounding text
         re.compile(r"^\s*\[[^\]]+\]\([^)]+\)\s*$"),
@@ -56,9 +56,9 @@ class CnbcParser(ContentParser):
         re.compile(r"^read (more|also)\s*:", re.IGNORECASE),
         # "WATCH: [link]" inline video promos (bold or plain)
         re.compile(r"^\**\s*WATCH\s*:\**", re.IGNORECASE),
-        # "[Sign up](url) for our weekly newsletter…" inline CTA
+        # "[Sign up](url) for our weekly newsletter..." inline CTA
         re.compile(r"^\[Sign up\]\(", re.IGNORECASE),
-        # "CNBC's new online course" promotional lines (fallback for multi-line CTAs)
+        # "CNBC's new online course" promotional lines (multi-line CTA fallback)
         re.compile(r"cnbc[''']s new online course", re.IGNORECASE),
     )
 
@@ -67,37 +67,47 @@ class CnbcParser(ContentParser):
         collected: list[str] = []
 
         for line in markdown.split("\n"):
-            # Stop at known boilerplate headings.
-            if line.startswith("#"):
-                heading = line.lstrip("#").strip().lower()
-                if any(heading == s or heading.startswith(s) for s in self.EXCLUDED_SECTIONS):
-                    break
+            heading = self._heading_text(line)
+            if heading is not None and self._is_excluded_heading(heading):
+                break
 
-                # Remove bold/italic markers wrapping only whitespace (e.g. "** **")
-            line = re.sub(r'\*{1,3}\s*\*{1,3}', '', line)
-            # Normalize spaces before punctuation left by stripped inline markers
-            # e.g. "**Airbnb supplies** :" → "Airbnb supplies :" → "Airbnb supplies:"
-            line = re.sub(r'\s+([,;:])', r'\1', line)
+            line = self._clean_inline_markers(line)
 
-            # Drop residual boilerplate lines.
-            if any(pat.search(line) for pat in self._SKIP_PATTERNS):
+            if self._matches_any(line, self._SKIP_PATTERNS):
                 continue
 
             collected.append(line)
 
-        # Strip trailing blank lines.
-        while collected and not collected[-1].strip():
-            collected.pop()
-
-        # Remove the first line (from the end) that matches a cutoff pattern,
-        # plus everything after it. Scans line by line so adjacent non-blank
-        # lines don't hide the match inside a larger "paragraph".
-        for i in range(len(collected) - 1, -1, -1):
-            if any(pat.match(collected[i]) for pat in self._TRAILING_CUTOFF_PATTERNS):
-                # Drop preceding blank lines too.
-                while i > 0 and not collected[i - 1].strip():
-                    i -= 1
-                collected = collected[:i]
-                break
-
+        collected = self._without_trailing_blank_lines(collected)
+        collected = self._cut_trailing_cta(collected)
         return "\n".join(collected)
+
+    def _is_excluded_heading(self, heading: str) -> bool:
+        """True if the heading starts a known boilerplate section."""
+        return any(
+            heading == section or heading.startswith(section)
+            for section in self.EXCLUDED_SECTIONS
+        )
+
+    def _clean_inline_markers(self, line: str) -> str:
+        """Remove empty bold/italic markers and fix spacing before punctuation.
+
+        e.g. "**Airbnb supplies** :" -> "Airbnb supplies:"
+        """
+        line = re.sub(r'\*{1,3}\s*\*{1,3}', '', line)
+        line = re.sub(r'\s+([,;:])', r'\1', line)
+        return line
+
+    def _cut_trailing_cta(self, lines: list[str]) -> list[str]:
+        """Drop a trailing "Want to ...?" CTA paragraph and everything after it.
+
+        We scan from the bottom up so adjacent non-blank lines don't hide the
+        match inside a larger paragraph.
+        """
+        for index in range(len(lines) - 1, -1, -1):
+            if any(pattern.match(lines[index]) for pattern in self._TRAILING_CUTOFF_PATTERNS):
+                # Also drop the blank lines that came right before the CTA.
+                while index > 0 and not lines[index - 1].strip():
+                    index -= 1
+                return lines[:index]
+        return lines

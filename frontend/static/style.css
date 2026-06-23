@@ -273,6 +273,7 @@ textarea { font-family: var(--mono); font-size: 0.88rem; resize: vertical; }
 }
 .alert.success { background: #e9f4ed; border: 1px solid #bde0c8; color: #1f5d36; }
 .alert.error { background: #fbe9e7; border: 1px solid #f0bdba; color: #8a1c14; }
+.alert.warn { background: #fdf3e2; border: 1px solid #ecd2a0; color: #8a5d0a; }
 
 /* ─── Result panels (parser_eval) ──────────────────────────────────────── */
 

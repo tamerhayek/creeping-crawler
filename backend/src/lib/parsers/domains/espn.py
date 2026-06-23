@@ -13,15 +13,16 @@ from ..base import ContentParser
 class EspnParser(ContentParser):
     """Parser for ESPN pages.
 
-    CrawlerRunConfig handles nav/footer/sidebar/ad removal.
-    This parser stops at known boilerplate section headings and strips
-    residual boilerplate lines that can leak through markdown conversion.
+    CrawlerRunConfig already removes nav/footer/sidebar/ads. This parser stops
+    at known boilerplate section headings and drops residual boilerplate lines
+    that can still leak through the markdown conversion.
 
-    For player stats pages (/player/stats/) content is collected starting
-    from the "Stats" heading; all other pages collect from the top.
+    On player stats pages (/player/stats/) the useful content starts at the
+    "Stats" heading, so we begin collecting from there. On every other page we
+    collect from the top.
     """
 
-    # Heading-level section names that signal end of editorial content.
+    # Heading-level section names that signal the end of editorial content.
     EXCLUDED_SECTIONS = frozenset({
         "advertisement",
         "trending",
@@ -33,9 +34,9 @@ class EspnParser(ContentParser):
         "editors' picks",
     })
 
-    # Footer/legal lines that signal end of useful content on any page.
-    # Patterns intentionally avoid ^ and $ anchors so they match even when
-    # the text is embedded in a markdown list item (- Terms of Use) or link
+    # Footer/legal lines that signal the end of useful content on any page.
+    # These patterns avoid the ^ and $ anchors on purpose, so they still match
+    # when the text is inside a markdown list item (- Terms of Use) or a link
     # ([Terms of Use](...)).
     _FOOTER_PATTERNS: tuple[re.Pattern, ...] = (
         re.compile(r"terms of use", re.IGNORECASE),
@@ -48,57 +49,63 @@ class EspnParser(ContentParser):
         re.compile(r"all rights reserved", re.IGNORECASE),
     )
 
-    # Regex patterns for non-editorial lines to drop outright.
+    # Non-editorial lines to drop outright.
     _SKIP_PATTERNS: tuple[re.Pattern, ...] = (
         # "WATCH:" or "READ:" inline promos
         re.compile(r"^\**\s*(WATCH|READ)\s*:\**", re.IGNORECASE),
         # Lines that are only a markdown link (related articles, topic tags)
         re.compile(r"^\s*\[[^\]]+\]\([^)]+\)\s*$"),
         # List-item lines whose only content is a link, optionally wrapped in
-        # bold markers (**).  ESPN injects related-article promo blocks in the
-        # form:  **-[Title](url)  /  - [Title](url)**  /  **-[Title](url)**
+        # bold markers (**). ESPN injects related-article promo blocks like:
+        #   **-[Title](url)  /  - [Title](url)**  /  **-[Title](url)**
         re.compile(r"^\s*\**-\s*(?:[^\[\n]*:\s*)?\[[^\]]+\]\([^)]+\)\**\s*$"),
         # Social / follow lines
         re.compile(r"follow us on", re.IGNORECASE),
-        # Photo caption prefix (caption appears as standalone italic line)
+        # Photo caption (appears as a standalone italic line)
         re.compile(r"^\s*\*[^*]+\*\s*$"),
-        # Web font observer test string injected by ESPN's font loader
+        # Web-font observer test string injected by ESPN's font loader
         re.compile(r"^BESbswy", re.IGNORECASE),
     )
 
-    # Regex to detect the start of the stats section on player stats pages.
+    # Detects the start of the stats section on player stats pages.
     _STATS_HEADING = re.compile(r"^#+\s*Stats\s*$|^Stats\s*$", re.IGNORECASE)
 
     def parse(self, url: str, markdown: str) -> str:
         """Return cleaned Crawl4AI markdown for ESPN pages."""
-        stats_page = "/player/stats/" in url
+        is_stats_page = "/player/stats/" in url
         collected: list[str] = []
-        in_content = not stats_page  # stats pages: wait for the Stats heading
+        # On stats pages we wait for the "Stats" heading before collecting.
+        collecting = not is_stats_page
 
         for line in markdown.split("\n"):
-            if not in_content:
+            if not collecting:
                 if self._STATS_HEADING.match(line):
-                    in_content = True
+                    collecting = True
                     collected.append("Stats")
                 continue
 
-            # Stop at footer/legal lines.
-            if any(pat.search(line) for pat in self._FOOTER_PATTERNS):
+            if self._is_end_of_content(line):
                 break
 
-            # Stop at known boilerplate headings.
-            if line.startswith("#"):
-                heading = line.lstrip("#").strip().lower()
-                if any(heading == s or heading.startswith(s) for s in self.EXCLUDED_SECTIONS):
-                    break
-
-            # Drop residual boilerplate lines.
-            if any(pat.search(line) for pat in self._SKIP_PATTERNS):
+            if self._matches_any(line, self._SKIP_PATTERNS):
                 continue
 
             collected.append(line)
 
-        while collected and not collected[-1].strip():
-            collected.pop()
+        return "\n".join(self._without_trailing_blank_lines(collected))
 
-        return "\n".join(collected)
+    def _is_end_of_content(self, line: str) -> bool:
+        """True if the line marks the end of the editorial content."""
+        if self._matches_any(line, self._FOOTER_PATTERNS):
+            return True
+        heading = self._heading_text(line)
+        if heading is not None and self._is_excluded_heading(heading):
+            return True
+        return False
+
+    def _is_excluded_heading(self, heading: str) -> bool:
+        """True if the heading starts a known boilerplate section."""
+        return any(
+            heading == section or heading.startswith(section)
+            for section in self.EXCLUDED_SECTIONS
+        )

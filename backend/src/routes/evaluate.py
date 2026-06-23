@@ -60,18 +60,29 @@ async def full_gs_eval(domain: str = Query(...)):
     """Average all quantitative and judge metrics across a domain's gold standard.
 
     Uses the HTML stored in the DB (no live crawl) so the evaluation is
-    repeatable and not influenced by website changes.
+    repeatable and not influenced by website changes. If a single stored page
+    cannot be parsed it is skipped, so one bad entry does not fail the whole
+    domain.
     """
     assert_supported_domain(domain)
     entries = queries.get_entries_by_domain(domain)
 
-    # Parse all entries in parallel: only the markdown conversion is async-bound.
-    parsed_texts = await asyncio.gather(*[_parse_entry(entry) for entry in entries])
+    # Parse every stored page in parallel: the markdown conversion is the slow
+    # part. We ask gather to return the errors instead of raising, so a page
+    # that fails to parse can be skipped below.
+    parsed_texts = await asyncio.gather(
+        *[_parse_entry(entry) for entry in entries],
+        return_exceptions=True,
+    )
 
     token_level_results = []
     similarity_results = []
     judge_scores = []
     for entry, parsed_text in zip(entries, parsed_texts):
+        if isinstance(parsed_text, Exception):
+            # The stored HTML for this page could not be parsed, so we skip it.
+            continue
+
         token_level = calculate_token_level_metrics(parsed_text, entry.gold_text)
         similarity = calculate_content_metrics(parsed_text, entry.gold_text)
         # The judge is a blocking HTTP call to Ollama; run them sequentially
@@ -91,19 +102,33 @@ async def full_gs_eval(domain: str = Query(...)):
         )
         queries.save_judge_eval(entry.url, judge.judge_score)
 
-    count = len(entries)
+    return _average_results(token_level_results, similarity_results, judge_scores)
+
+
+def _average_results(token_level_results, similarity_results, judge_scores):
+    """Average the per-page metrics into a single response for the domain."""
+    evaluated_count = len(token_level_results)
+    if evaluated_count == 0:
+        # No page could be evaluated: return zeroed metrics instead of dividing
+        # by zero.
+        return FullGsEvalResponse(
+            token_level_eval=TokenLevelEval(precision=0.0, recall=0.0, f1=0.0),
+            similarity_eval=SimilarityEval(cosine=0.0, jaccard=0.0, excess_ratio=0.0),
+            judge_score=0.0,
+        )
+
     return FullGsEvalResponse(
         token_level_eval=TokenLevelEval(
-            precision=sum(r.precision for r in token_level_results) / count,
-            recall=sum(r.recall for r in token_level_results) / count,
-            f1=sum(r.f1 for r in token_level_results) / count,
+            precision=sum(r.precision for r in token_level_results) / evaluated_count,
+            recall=sum(r.recall for r in token_level_results) / evaluated_count,
+            f1=sum(r.f1 for r in token_level_results) / evaluated_count,
         ),
         similarity_eval=SimilarityEval(
-            cosine=sum(r.cosine for r in similarity_results) / count,
-            jaccard=sum(r.jaccard for r in similarity_results) / count,
-            excess_ratio=sum(r.excess_ratio for r in similarity_results) / count,
+            cosine=sum(r.cosine for r in similarity_results) / evaluated_count,
+            jaccard=sum(r.jaccard for r in similarity_results) / evaluated_count,
+            excess_ratio=sum(r.excess_ratio for r in similarity_results) / evaluated_count,
         ),
-        judge_score=sum(judge_scores) / count,
+        judge_score=sum(judge_scores) / evaluated_count,
     )
 
 

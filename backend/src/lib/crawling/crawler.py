@@ -10,13 +10,13 @@ from dataclasses import dataclass
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
 from crawl4ai.async_configs import CacheMode
 
-from ..gold_standard.gold import get_entry_for_url
 from .domains.registry import config_for as _domain_config
 
 _DEFAULT_CONFIG = CrawlerRunConfig(magic=True)
 
-# A single browser is started once and reused for every crawl, instead of
-# launching and closing Chromium on each request (which was the slowest part).
+# We start one browser the first time it is needed and reuse it for every
+# crawl, instead of opening and closing Chromium on each request (which was
+# the slowest part).
 _crawler: AsyncWebCrawler | None = None
 
 
@@ -43,12 +43,12 @@ def _config_for(url: str) -> CrawlerRunConfig:
 
 
 def _html_only_config(url: str) -> CrawlerRunConfig:
-    """Return a browser-free config for processing already-fetched HTML.
+    """Return a config for processing HTML we already have, without a browser.
 
-    Keeps domain-specific extraction filters (excluded_tags, excluded_selector,
-    remove_forms) but drops magic and any other flag that would trigger
-    Playwright, since we already have the HTML and only need the
-    HTML-to-markdown conversion pipeline.
+    We keep the domain-specific filters (excluded_tags, excluded_selector,
+    remove_forms) but drop ``magic`` and anything else that would start the
+    browser, since the HTML is already downloaded and we only need to turn it
+    into markdown.
     """
     base = _config_for(url)
     return CrawlerRunConfig(
@@ -68,11 +68,11 @@ class PageContent:
 
 
 def _title(html: str, metadata: dict) -> str:
-    """Extract the page title from Crawl4AI metadata or the raw HTML <title> tag."""
+    """Get the page title from Crawl4AI metadata, or from the <title> tag."""
     title = (metadata or {}).get("title", "")
     if not title:
-        m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-        title = m.group(1).strip() if m else ""
+        match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+        title = match.group(1).strip() if match else ""
     return title
 
 
@@ -82,10 +82,10 @@ async def fetch_page(url: str) -> PageContent:
     Raises:
         RuntimeError: if Crawl4AI reports a failed crawl.
     """
-    run_cfg = _config_for(url)
-    run_cfg.cache_mode = CacheMode.BYPASS
+    run_config = _config_for(url)
+    run_config.cache_mode = CacheMode.BYPASS
     crawler = await get_crawler()
-    result = await crawler.arun(url=url, config=run_cfg)
+    result = await crawler.arun(url=url, config=run_config)
 
     if not result.success:
         raise RuntimeError(f"Crawl failed for {url}: {result.error_message}")
@@ -97,32 +97,21 @@ async def fetch_page(url: str) -> PageContent:
     )
 
 
-async def fetch_page_for_url(url: str) -> PageContent:
-    """Fetch a page using the stored HTML from the gold standard if available, else crawl live."""
-    entry = get_entry_for_url(url)
-    if entry and entry.get("html_text"):
-        page = await fetch_page_from_html(url, entry["html_text"])
-        if page.markdown_text:
-            return page
-    return await fetch_page(url)
-
-
 async def fetch_page_from_html(url: str, html_text: str) -> PageContent:
-    """Convert a stored HTML string to markdown using Crawl4AI's fast path.
+    """Turn a stored HTML string into markdown, without using the browser.
 
-    Passes the HTML via the raw: scheme with a browser-free config so that
-    Crawl4AI skips Playwright and runs only the HTML-to-markdown pipeline.
-    Domain-specific extraction filters (excluded_tags, excluded_selector, etc.)
-    are preserved; magic/JS execution is intentionally disabled since the HTML
-    is already available and doesn't need rendering.
+    We hand the HTML to Crawl4AI through its ``raw:`` scheme with a browser-free
+    config, so it skips the browser and only runs the HTML-to-markdown step. The
+    domain-specific filters are still applied; the browser/JS rendering is left
+    off on purpose because we already have the HTML.
 
     Raises:
         RuntimeError: if Crawl4AI fails to process the HTML.
     """
-    run_cfg = _html_only_config(url)
-    run_cfg.cache_mode = CacheMode.BYPASS
+    run_config = _html_only_config(url)
+    run_config.cache_mode = CacheMode.BYPASS
     crawler = await get_crawler()
-    result = await crawler.arun(url=f"raw:{html_text}", config=run_cfg)
+    result = await crawler.arun(url=f"raw:{html_text}", config=run_config)
 
     if not result.success:
         raise RuntimeError(f"HTML processing failed: {result.error_message}")

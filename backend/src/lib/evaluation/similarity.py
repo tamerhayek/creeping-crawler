@@ -1,7 +1,8 @@
-"""Similarity evaluation (frequency-vector-based): cosine, Jaccard, excess ratio.
+"""Similarity evaluation: cosine, Jaccard, excess ratio.
 
-Operates on token *frequency vectors* (Counter), making it sensitive to
-repeated terms and to the overall volume of extracted content relative to gold.
+These metrics work on how many times each word appears (a word-frequency
+count), so they react both to repeated words and to how much content the
+parser extracted compared to the gold text.
 """
 
 import math
@@ -13,13 +14,11 @@ from .tokens import strip_markdown
 
 @dataclass(frozen=True)
 class ContentMetrics:
-    """Immutable result of frequency-vector-based content evaluation.
+    """Result of the frequency-based content evaluation (read-only).
 
-    cosine       — cos(θ) between frequency vectors; high → similar distribution.
-    jaccard      — |A∩B| / |A∪B| on token sets; penalises both extra and missing tokens.
-    excess_ratio — fraction of parsed tokens not matched by gold (lower is better).
-                   Computed on frequency vectors: 1 - overlap/total_parsed, where
-                   overlap = Σ min(freq_parsed[t], freq_gold[t]).
+    cosine       - how aligned the two word-frequency counts are (higher = more similar).
+    jaccard      - shared words divided by all the distinct words in either text.
+    excess_ratio - share of parsed words the gold text does not cover (lower is better).
     """
 
     cosine: float
@@ -30,46 +29,55 @@ class ContentMetrics:
 def calculate_content_metrics(parsed_text: str, gold_text: str) -> ContentMetrics:
     """Compute cosine similarity, Jaccard similarity, and excess ratio.
 
-    All three metrics strip markdown before processing.
-
-    cosine similarity — frequency-vector dot product normalised by magnitudes.
-        cos(θ) = (A·B) / (|A|·|B|)
-        Sensitive to token frequency distributions; less sensitive to extra content.
-
-    jaccard similarity — set overlap normalised by union size.
-        J = |A∩B| / |A∪B|
-        Penalises both extra tokens (enlarges union) and missing tokens.
-
-    excess ratio — fraction of parsed token occurrences not covered by gold.
-        excess = 1 - Σ min(fp[t], fg[t]) / Σ fp[t]
-        Directly measures how much extracted content is noise. Lower is better.
-
-    Returns zeros for all metrics if either text is empty.
+    Markdown is stripped from both texts first, then each text is turned into a
+    word-frequency count (how many times each word appears). Returns zeros for
+    all metrics if either text is empty.
     """
-    parsed_stripped = strip_markdown(parsed_text)
-    gold_stripped = strip_markdown(gold_text)
+    parsed_frequencies = Counter(strip_markdown(parsed_text).split())
+    gold_frequencies = Counter(strip_markdown(gold_text).split())
 
-    freq_p = Counter(parsed_stripped.split())
-    freq_g = Counter(gold_stripped.split())
-
-    if not freq_p or not freq_g:
+    if not parsed_frequencies or not gold_frequencies:
         return ContentMetrics(cosine=0.0, jaccard=0.0, excess_ratio=0.0)
 
-    # Cosine
-    dot = sum(freq_p[t] * freq_g[t] for t in freq_p if t in freq_g)
-    mag_p = math.sqrt(sum(v ** 2 for v in freq_p.values()))
-    mag_g = math.sqrt(sum(v ** 2 for v in freq_g.values()))
-    cosine = dot / (mag_p * mag_g) if mag_p and mag_g else 0.0
+    return ContentMetrics(
+        cosine=_cosine_similarity(parsed_frequencies, gold_frequencies),
+        jaccard=_jaccard_similarity(parsed_frequencies, gold_frequencies),
+        excess_ratio=_excess_ratio(parsed_frequencies, gold_frequencies),
+    )
 
-    # Jaccard (set-based)
-    set_p = set(freq_p)
-    set_g = set(freq_g)
-    union = len(set_p | set_g)
-    jaccard = len(set_p & set_g) / union if union else 0.0
 
-    # Excess ratio (frequency-based)
-    overlap = sum(min(freq_p[t], freq_g[t]) for t in freq_p if t in freq_g)
-    total_parsed = sum(freq_p.values())
-    excess_ratio = 1.0 - (overlap / total_parsed) if total_parsed else 0.0
+def _cosine_similarity(parsed_frequencies: Counter, gold_frequencies: Counter) -> float:
+    """How aligned the two word-frequency counts are (1.0 = identical mix)."""
+    dot_product = sum(
+        count * gold_frequencies[word]
+        for word, count in parsed_frequencies.items()
+        if word in gold_frequencies
+    )
+    parsed_magnitude = math.sqrt(sum(count ** 2 for count in parsed_frequencies.values()))
+    gold_magnitude = math.sqrt(sum(count ** 2 for count in gold_frequencies.values()))
+    if not parsed_magnitude or not gold_magnitude:
+        return 0.0
+    return dot_product / (parsed_magnitude * gold_magnitude)
 
-    return ContentMetrics(cosine=cosine, jaccard=jaccard, excess_ratio=excess_ratio)
+
+def _jaccard_similarity(parsed_frequencies: Counter, gold_frequencies: Counter) -> float:
+    """Shared distinct words divided by all distinct words in either text."""
+    parsed_words = set(parsed_frequencies)
+    gold_words = set(gold_frequencies)
+    union_size = len(parsed_words | gold_words)
+    if not union_size:
+        return 0.0
+    return len(parsed_words & gold_words) / union_size
+
+
+def _excess_ratio(parsed_frequencies: Counter, gold_frequencies: Counter) -> float:
+    """Share of parsed word occurrences the gold text does not cover (lower = better)."""
+    overlap = sum(
+        min(count, gold_frequencies[word])
+        for word, count in parsed_frequencies.items()
+        if word in gold_frequencies
+    )
+    total_parsed = sum(parsed_frequencies.values())
+    if not total_parsed:
+        return 0.0
+    return 1.0 - (overlap / total_parsed)
