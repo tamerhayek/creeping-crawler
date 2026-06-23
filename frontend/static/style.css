@@ -257,6 +257,8 @@ textarea { font-family: var(--mono); font-size: 0.88rem; resize: vertical; }
   text-decoration: none;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
+/* La matita ✎ punta in basso a sinistra: la specchiamo così la punta va a destra. */
+.btn-edit { transform: scaleX(-1); }
 .btn-edit:hover { background: var(--bordeaux); color: white; border-color: var(--bordeaux); }
 
 .edit-hint { font-weight: 400; font-size: 0.78rem; color: var(--bordeaux); margin-left: 0.4rem; }
