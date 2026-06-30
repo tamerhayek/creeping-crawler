@@ -1,6 +1,7 @@
 services:
   mariadb:
     image: mariadb:11.8.8
+    restart: unless-stopped
     ports:
       - "3306:3306"
     environment:
@@ -12,6 +13,7 @@ services:
       - ./mariadb_data/data:/var/lib/mysql
       - ./mariadb_data/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
+      # Healthy only once the database accepts connections and InnoDB is ready.
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
@@ -20,6 +22,7 @@ services:
 
   ollama:
     image: ollama/ollama:0.30.10
+    restart: unless-stopped
     ports:
       - "11434:11434"
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
@@ -27,8 +30,8 @@ services:
       - ./ollama_data/data:/root/.ollama
       - ./ollama_data/entrypoint.sh:/entrypoint.sh
     healthcheck:
-      # Considera healthy solo quando il modello è già stato scaricato
-      # (al primo boot il pull può richiedere alcuni minuti).
+      # Healthy only once the model has finished downloading.
+      # On the first boot the pull can take a few minutes.
       test: ["CMD-SHELL", "ollama list | grep -q llama3.2:3b"]
       interval: 10s
       timeout: 5s
@@ -39,6 +42,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    restart: unless-stopped
     ports:
       - "8003:8003"
     environment:
@@ -53,14 +57,31 @@ services:
         condition: service_healthy
       ollama:
         condition: service_healthy
+    healthcheck:
+      # Healthy once the API answers on the /domains endpoint.
+      # The slim image has no curl/wget, so we use Python's urllib instead.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/domains')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    restart: unless-stopped
     ports:
       - "8004:8004"
     environment:
       BACKEND_URL: http://backend:8003
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      # Healthy once the web UI answers on its home page.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s

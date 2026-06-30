@@ -2,11 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Layer 1: dipendenze — cache valida finché requirements.txt non cambia
 COPY frontend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Layer 2: sorgenti
 COPY frontend/ .
 
 EXPOSE 8004
