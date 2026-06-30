@@ -76,8 +76,7 @@ services:
     environment:
       BACKEND_URL: http://backend:8003
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     healthcheck:
       # Healthy once the web UI answers on its home page.
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/')"]
