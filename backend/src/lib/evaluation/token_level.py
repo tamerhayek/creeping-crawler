@@ -26,8 +26,8 @@ def calculate_token_level_metrics(parsed_text: str, gold_text: str) -> TokenLeve
 
     Both texts are passed through strip_markdown before tokenization so that
     markdown formatting is removed and HTML entities are decoded symmetrically.
-    Typographic characters (quotes, dashes) are kept as-is, so quote style is
-    compared literally. Returns zero for all scores if either text is empty.
+    Tokenization also normalises typographic quotes/dashes, so quote style does
+    not change the score. Returns zero for all scores if either text is empty.
     """
     extracted_tokens = extract_unique_tokens(strip_markdown(parsed_text))
     sample_tokens = extract_unique_tokens(strip_markdown(gold_text))

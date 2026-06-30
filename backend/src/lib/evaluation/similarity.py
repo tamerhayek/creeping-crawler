@@ -9,7 +9,7 @@ import math
 from collections import Counter
 from dataclasses import dataclass
 
-from .tokens import strip_markdown
+from .tokens import normalize_for_compare, strip_markdown
 
 
 @dataclass(frozen=True)
@@ -33,8 +33,8 @@ def calculate_content_metrics(parsed_text: str, gold_text: str) -> ContentMetric
     word-frequency count (how many times each word appears). Returns zeros for
     all metrics if either text is empty.
     """
-    parsed_frequencies = Counter(strip_markdown(parsed_text).split())
-    gold_frequencies = Counter(strip_markdown(gold_text).split())
+    parsed_frequencies = Counter(normalize_for_compare(strip_markdown(parsed_text)).split())
+    gold_frequencies = Counter(normalize_for_compare(strip_markdown(gold_text)).split())
 
     if not parsed_frequencies or not gold_frequencies:
         return ContentMetrics(cosine=0.0, jaccard=0.0, excess_ratio=0.0)
