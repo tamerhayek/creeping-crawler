@@ -73,8 +73,9 @@ logs:
 # scratch (no Docker build cache for backend/frontend either).
 reset:
 	docker compose down
-	docker volume rm creeping-crawler_mariadb-data 2>/dev/null || true
-	docker volume rm creeping-crawler_ollama-data 2>/dev/null || true
+	# The data lives in bind mounts created by the containers as root, so
+	# clearing it needs sudo and removes only data/, not the committed files.
+	sudo rm -rf ./mariadb_data/data ./ollama_data/data
 	docker compose build --no-cache
 	docker compose up -d
 
@@ -107,6 +108,7 @@ test:
 ifndef STUDENT_ID
 	$(error STUDENT_ID is not set. Usage: make test STUDENT_ID=<your_student_id>)
 endif
+	sudo chmod -R 777 .
 	docker load -i $(GRADER_IMAGE)
 	docker run --rm --name creeping-crawler-grader --network host $(GRADER_TAG) $(STUDENT_ID)
 
