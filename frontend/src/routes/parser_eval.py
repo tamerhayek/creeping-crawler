@@ -13,7 +13,6 @@ from ..client import (
     parse_url,
 )
 from ..templates import templates
-from ..utils import strip_markdown
 
 router = APIRouter()
 
@@ -43,9 +42,8 @@ def parser_eval(
             result = {"data": data, "error": error, "url": url.strip(), "mode": mode}
 
             if not error:
-                # Strip markdown from parsed_text so the diff and the metrics
-                # compare clean text (without #, *, links, etc.) against gold_text.
-                result["cleaned_text"] = strip_markdown(data.get("parsed_text", ""))
+                # The backend already returns the markdown-stripped text.
+                result["cleaned_text"] = data.get("cleaned_text", "")
 
                 # If the URL is in the gold standard, fetch the gold text and
                 # compute both quantitative and judge evaluations.
@@ -53,8 +51,15 @@ def parser_eval(
                     gold_entry = get_gold_standard(url.strip())
                     if gold_entry:
                         result["gold_text"] = gold_entry["gold_text"]
-                        result["eval"] = evaluate(result["cleaned_text"], gold_entry["gold_text"])
-                        result["judge"] = evaluate_judge(result["cleaned_text"], gold_entry["gold_text"])
+                        # Send the raw texts: the backend strips both sides itself.
+                        parsed_text = data.get("parsed_text", "")
+                        result["eval"] = evaluate(parsed_text, gold_entry["gold_text"])
+                        judge = evaluate_judge(parsed_text, gold_entry["gold_text"])
+                        result["judge"] = judge
+                        if judge:
+                            result["judge_parsed_preview"] = judge.get("parsed_preview", "")
+                            result["judge_gold_preview"] = judge.get("gold_preview", "")
+                            result["judge_text_cap"] = judge.get("text_cap")
     except BackendUnavailable:
         return templates.TemplateResponse(
             request=request, name="error.html.jinja", status_code=503

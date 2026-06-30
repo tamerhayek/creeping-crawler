@@ -12,43 +12,51 @@ def build_judge_prompt(parsed_text: str, gold_text: str) -> str:
     gold_truncated = gold_text[:MAX_TEXT_CHARS]
     return (
         f"""
-        Sei un valutatore SEVERO della qualità di parsing web.
+        You are a judge of web parsing quality.
 
-        Confronta il DOCUMENTO PARSATO con il GOLD STANDARD e valuta quanto il parsing abbia preservato correttamente il contenuto informativo.
+        Your only task is to COMPARE two texts: the PARSED DOCUMENT and the GOLD STANDARD.
+        The GOLD STANDARD is the only source of truth. Measure how well the parsed document preserves its content.
+        Both texts are written in Italian.
 
-        Considera questi difetti:
-        - contenuti mancanti;
-        - contenuti errati o aggiunti;
-        - rumore (menu, footer, banner, cookie notice, pubblicità);
-        - duplicazioni;
-        - problemi strutturali (titoli, sezioni, liste, tabelle, ordine dei contenuti).
+        Count something as a defect ONLY if you can verify it by comparing the two texts:
+        - content present in the gold but missing from the parsed text;
+        - content present in the parsed text but absent from the gold (added text or noise: menu, footer, banner, cookie notice, ads);
+        - duplications in the parsed text;
+        - structural problems (headings, sections, lists, tables, content order).
 
-        Usa questa scala in modo rigoroso:
-        - 1 = i due testi parlano di cose diverse, oppure manca quasi tutto il contenuto, oppure uno dei due è vuoto;
-        - 2 = molti errori: gran parte del contenuto è persa, sbagliata o sommersa dal rumore;
-        - 3 = contenuto solo parziale, con errori evidenti o rumore significativo;
-        - 4 = buono: il contenuto coincide quasi del tutto, restano solo piccole imperfezioni;
-        - 5 = estrazione quasi perfetta: nessuna parte importante mancante, nessun rumore.
+        MAIN RULE - do not invent defects:
+        - Before writing that some content is "missing" (a law, an institution, a name, a date, a number, a reference...), CHECK that this content really appears in the gold standard.
+        - If you cannot find it written in the gold standard below, it is NOT a defect: do not mention it.
+        - Do not use outside knowledge: never add laws, institutions, facts or details that do not appear in the two texts.
+        - If the two texts say the same thing with small formatting differences, it is NOT a defect.
 
-        Regole:
-        - Basati ESCLUSIVAMENTE sui due testi qui sotto: non usare conoscenze esterne e non inventare contenuti, difetti o informazioni non presenti nei testi.
-        - Scrivi PRIMA il feedback elencando i difetti concreti, POI assegna un voto coerente con quei difetti.
-        - Assegna 4 o 5 SOLO se il contenuto informativo dei due testi coincide davvero.
-        - Se i due testi trattano argomenti diversi, assegna 1.
-        - Non essere generoso: nel dubbio, abbassa il voto.
+        Use this scale strictly:
+        - 1 = the two texts talk about different things, or almost all content is missing, or one of them is empty;
+        - 2 = many errors: most of the content is lost, wrong, or buried under noise;
+        - 3 = only partial content, with clear errors or significant noise;
+        - 4 = good: the content matches almost entirely, only small imperfections remain;
+        - 5 = nearly perfect extraction: no important part missing, no noise.
 
-        Esempi di output:
+        Scoring rules:
+        - First write the feedback listing the concrete defects you verified in the two texts, THEN assign a score consistent with those defects.
+        - Penalize only defects you verified: do not lower the score for defects you cannot point to in the texts.
+        - Give 4 or 5 ONLY if the informative content of the two texts really matches.
+        - If the two texts are about different topics, give 1.
+
+        Write the "feedback" field in Italian.
+
+        Output examples:
         {{"feedback": "I due testi parlano di argomenti completamente diversi: nessun contenuto in comune.", "score": 1}}
         {{"feedback": "Manca circa metà del contenuto ed è presente molto rumore da menu e footer.", "score": 2}}
         {{"feedback": "Contenuto fedele al riferimento, solo piccole differenze di formattazione.", "score": 5}}
 
-        Testo estratto dal parser:
+        Text extracted by the parser:
         {parsed_truncated}
 
-        Testo di riferimento (Gold Standard):
+        Reference text (Gold Standard):
         {gold_truncated}
 
-        Rispondi SOLO con un JSON nel seguente formato (il feedback deve essere una o due frasi al massimo):
+        Answer ONLY with a JSON object in this format (the feedback must be one or two sentences at most, written in Italian):
         {{"feedback": "<difetti principali del testo>", "score": <intero tra 1 e 5>}}
         """
     )

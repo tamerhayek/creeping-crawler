@@ -12,7 +12,9 @@ from ..lib import (
     get_parser_for_url,
 )
 from ..lib.db import queries
+from ..lib.evaluation import strip_markdown
 from ..lib.llm import evaluate_with_judge
+from ..lib.llm.prompt import MAX_TEXT_CHARS
 from ..schemas import (
     EvaluateRequest,
     EvaluateResponse,
@@ -52,6 +54,9 @@ def evaluate_judge(body: EvaluateRequest):
         model_name=result.model_name,
         judge_score=result.judge_score,
         judge_feedback=result.judge_feedback,
+        parsed_preview=strip_markdown(body.parsed_text)[:MAX_TEXT_CHARS],
+        gold_preview=strip_markdown(body.gold_text)[:MAX_TEXT_CHARS],
+        text_cap=MAX_TEXT_CHARS,
     )
 
 

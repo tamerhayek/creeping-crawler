@@ -35,6 +35,9 @@ class JudgeEvalResponse(BaseModel):
     model_name: str
     judge_score: int
     judge_feedback: str
+    parsed_preview: str  # markdown-stripped parsed text, cut to text_cap
+    gold_preview: str    # markdown-stripped gold text, cut to text_cap
+    text_cap: int
 
 
 class FullGsEvalResponse(BaseModel):

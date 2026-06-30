@@ -9,6 +9,7 @@ from ..lib import (
     fetch_page_from_html,
     get_parser_for_url,
 )
+from ..lib.evaluation import strip_markdown
 from ..lib.db import queries
 from ..lib.db.models import WebResource
 from ..schemas import ParseRequest, ParseResponse
@@ -73,6 +74,7 @@ async def _parse_live_and_cache(url: str, domain: str) -> ParseResponse:
         title=page.title,
         html_text=page.html_text,
         parsed_text=parsed_text,
+        cleaned_text=strip_markdown(parsed_text),
     )
 
 
@@ -94,6 +96,7 @@ async def _parse_live(url: str) -> ParseResponse:
         title=page.title,
         html_text=page.html_text,
         parsed_text=parsed_text,
+        cleaned_text=strip_markdown(parsed_text),
     )
 
 
@@ -137,5 +140,6 @@ async def _parse_stored_resource(
         title=page.title or resource.title,
         html_text=resource.html_text,
         parsed_text=parsed_text,
+        cleaned_text=strip_markdown(parsed_text),
         fallback_used=fallback_used,
     )
