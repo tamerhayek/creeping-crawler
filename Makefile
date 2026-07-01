@@ -5,7 +5,7 @@
         up down logs reset \
         freeze-backend freeze-frontend freeze \
         delete-backend delete-frontend delete-envs \
-        grader-load test
+        grader-load test test-report
 
 CONDA ?= $(shell which conda)
 
@@ -109,6 +109,18 @@ ifndef STUDENT_ID
 endif
 	docker load -i $(GRADER_IMAGE)
 	docker run --rm --name creeping-crawler-grader --network host $(GRADER_TAG) $(STUDENT_ID)
+
+# Usage: make test-report STUDENT_ID=<your_student_id>
+# Writes the JSON report to ./output/report.json and prints it to stdout.
+test-report:
+ifndef STUDENT_ID
+	$(error STUDENT_ID is not set. Usage: make test-report STUDENT_ID=<your_student_id>)
+endif
+	docker load -i $(GRADER_IMAGE)
+	mkdir -p output
+	docker run --rm --name creeping-crawler-grader --network host \
+		-v "$(CURDIR)/output:/output" \
+		$(GRADER_TAG) $(STUDENT_ID) --machine -o /output/report.json
 
 # ─── Cleanup ─────────────────────────────────────────────────────────────────
 

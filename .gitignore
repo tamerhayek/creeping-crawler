@@ -12,3 +12,6 @@ lab-grader-progetto-finale.tar
 # Dati locali dei volumi (bind mount) — non vanno nel repo
 mariadb_data/data/
 ollama_data/data/
+
+# Report output
+output/
