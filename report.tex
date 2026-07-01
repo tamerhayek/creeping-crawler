@@ -207,7 +207,7 @@ Il frontend (FastAPI + Jinja2, HTML/CSS) permette di usare l'intera pipeline sen
 
 \paragraph{Automazione con Makefile.} Un \texttt{Makefile} centralizza i comandi ricorrenti: setup degli ambienti e delle dipendenze, avvio in locale, gestione dello stack Docker (\texttt{up}, \texttt{down}, \texttt{logs}), un target \texttt{reset} che ricrea l'intero stack da zero, e un target \texttt{test} che esegue il grader ufficiale.
 
-\paragraph{Healthcheck e avvio ordinato.} Ogni container ha un healthcheck e diventa \emph{healthy} solo quando è realmente pronto: MariaDB quando accetta connessioni, Ollama dopo il download del modello \texttt{llama3.2:3b}, backend e frontend quando rispondono alle richieste. Grazie ai \texttt{depends\_on} con \texttt{condition:\ service\_healthy}, l'avvio è ordinato e il sistema è utilizzabile solo quando tutte le dipendenze lo sono, gestendo anche il primo boot in cui il pull del modello richiede alcuni minuti.
+\paragraph{Healthcheck e avvio ordinato.} MariaDB e Ollama espongono un healthcheck e diventano \emph{healthy} solo quando sono realmente pronti: MariaDB quando accetta connessioni, Ollama dopo il download del modello \texttt{llama3.2:3b}. Il backend si avvia solo a quel punto, grazie ai \texttt{depends\_on} con \texttt{condition:\ service\_healthy}, e il frontend parte a sua volta dopo il backend. L'avvio è quindi ordinato e il sistema è utilizzabile solo quando tutte le dipendenze lo sono, gestendo anche il primo boot in cui il pull del modello richiede alcuni minuti.
 
 % ─── 10. Extra ───────────────────────────────────────────────────────────────
 

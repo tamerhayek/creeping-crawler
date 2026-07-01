@@ -57,14 +57,6 @@ services:
         condition: service_healthy
       ollama:
         condition: service_healthy
-    healthcheck:
-      # Healthy once the API answers on the /domains endpoint.
-      # The slim image has no curl/wget, so we use Python's urllib instead.
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/domains')"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
 
   frontend:
     build:
@@ -77,10 +69,3 @@ services:
       BACKEND_URL: http://backend:8003
     depends_on:
       - backend
-    healthcheck:
-      # Healthy once the web UI answers on its home page.
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/')"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s

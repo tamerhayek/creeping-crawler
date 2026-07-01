@@ -26,7 +26,7 @@ def get_status() -> dict:
     """Return the per-component status (backend/database/ollama)."""
     try:
         return requests.get(f"{BACKEND}/status", timeout=SHORT_TIMEOUT).json()
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -34,7 +34,7 @@ def get_domains() -> list[str]:
     """Return the list of supported domains."""
     try:
         return requests.get(f"{BACKEND}/domains", timeout=SHORT_TIMEOUT).json().get("domains", [])
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -47,7 +47,7 @@ def get_gs_urls(domain: str) -> list[str]:
             timeout=SHORT_TIMEOUT,
         )
         return response.json().get("gold_standard_urls", [])
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -60,7 +60,7 @@ def get_gold_standard(url: str) -> dict | None:
             timeout=SHORT_TIMEOUT,
         )
         return response.json() if response.status_code == 200 else None
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -68,7 +68,7 @@ def get_db_stats() -> dict:
     """Return per-domain counts and average evaluations."""
     try:
         return requests.get(f"{BACKEND}/db_stats", timeout=SHORT_TIMEOUT).json()
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -85,7 +85,7 @@ def parse_url(url: str, local: bool = False) -> tuple[dict, str | None]:
         if response.status_code != 200:
             return {}, response.json().get("detail", f"Backend error {response.status_code}")
         return response.json(), None
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -98,7 +98,7 @@ def evaluate(parsed_text: str, gold_text: str) -> dict | None:
             timeout=SHORT_TIMEOUT,
         )
         return response.json() if response.status_code == 200 else None
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -111,7 +111,7 @@ def evaluate_judge(parsed_text: str, gold_text: str) -> dict | None:
             timeout=JUDGE_TIMEOUT,
         )
         return response.json() if response.status_code == 200 else None
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -128,7 +128,7 @@ def add_web_resource(url: str, html_text: str) -> tuple[bool, str | None]:
         if response.status_code == 200:
             return True, None
         return False, response.json().get("detail", f"Backend error {response.status_code}")
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -143,7 +143,7 @@ def add_gold_standard(url: str, gold_text: str) -> tuple[bool, str | None]:
         if response.status_code == 200:
             return True, None
         return False, response.json().get("detail", f"Backend error {response.status_code}")
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
 
 
@@ -158,5 +158,5 @@ def delete_gold_standard(url: str) -> tuple[bool, str | None]:
         if response.status_code == 200:
             return True, None
         return False, response.json().get("detail", f"Backend error {response.status_code}")
-    except requests.exceptions.ConnectionError as error:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as error:
         raise BackendUnavailable() from error
