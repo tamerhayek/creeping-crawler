@@ -29,8 +29,12 @@ _QUOTE_TABLE = str.maketrans({
 
 
 def normalize_for_compare(text: str) -> str:
-    """Map curly quotes and dashes to ASCII so quote style does not affect scores."""
-    return text.translate(_QUOTE_TABLE)
+    """Map curly quotes and dashes to ASCII and lowercase, only for comparison.
+
+    Used when comparing texts to compute the metrics. The parser output and the
+    displayed text are never changed.
+    """
+    return text.translate(_QUOTE_TABLE).lower()
 
 
 def _canonicalize_number(token: str) -> str:
