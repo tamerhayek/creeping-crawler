@@ -84,7 +84,7 @@ Il modulo \texttt{src/lib/parsers/} definisce l'interfaccia astratta \texttt{Con
 \label{tab:schema}
 \end{table}
 
-Il Gold Standard è costruito manualmente e salvato come file JSON in \texttt{gs\_data/} (uno per dominio), che fungono da seed. Il DBMS è \textbf{MariaDB}. Lo schema (definito in \texttt{init.sql} ed esposto da \texttt{GET /db\_schema}) è organizzato in tre tabelle (Tabella~\ref{tab:schema}): \texttt{web\_resources} conserva l'HTML grezzo, \texttt{gold\_standard} il testo di riferimento in relazione 1-a-1, ed \texttt{evaluations} la cache delle metriche e del \texttt{judge\_score}. Solo le prime due sono richieste dalla specifica; \texttt{evaluations} è una tabella aggiuntiva che abbiamo introdotto come cache dei risultati.
+Il Gold Standard è costruito manualmente e salvato come file JSON in \texttt{gs\_data/} (uno per dominio), che fungono da seed. Il DBMS è \textbf{MariaDB}. Lo schema (definito in \texttt{init.sql} ed esposto da \texttt{GET /db\_schema}) è organizzato in tre tabelle (Tabella~\ref{tab:schema}): \texttt{web\_resources} conserva l'HTML grezzo, \texttt{gold\_standard} il testo di riferimento in relazione 1-a-1, ed \texttt{evaluations} le metriche e il \texttt{judge\_score}. Solo le prime due sono richieste dalla specifica; \texttt{evaluations} è una tabella aggiuntiva che abbiamo introdotto come archivio dei risultati.
 
 Al primo avvio uno script di inizializzazione idempotente carica automaticamente i JSON nel DB (HTML grezzo e \texttt{gold\_text}), rendendo il parsing rieseguibile offline e le valutazioni immediatamente disponibili.
 
@@ -219,6 +219,6 @@ Il frontend (FastAPI + Jinja2, HTML/CSS) permette di usare l'intera pipeline sen
 
 \paragraph{Overlay di caricamento.} Alcune operazioni (parsing live, valutazione e soprattutto il giudizio LLM) possono richiedere diversi secondi. Per non far percepire l'interfaccia come bloccata, la Web UI mostra un overlay di caricamento all'invio dei form, che migliora l'esperienza utente e previene invii multipli accidentali.
 
-\paragraph{Pre-calcolo all'avvio.} All'avvio del backend vengono pre-calcolate, a partire dall'HTML nel DB, le sole metriche quantitative, escludendo il giudizio LLM: valutare il judge su tutto il Gold Standard richiederebbe oltre 10 minuti. Il \texttt{judge\_score} viene quindi calcolato on demand da \texttt{/full\_gs\_eval}, che ne memorizza il risultato in cache.
+\paragraph{Pre-calcolo all'avvio.} All'avvio del backend vengono pre-calcolate, a partire dall'HTML nel DB, le sole metriche quantitative, escludendo il giudizio LLM: valutare il judge su tutto il Gold Standard richiederebbe oltre 10 minuti. Il \texttt{judge\_score} viene quindi calcolato on demand da \texttt{/full\_gs\_eval}, che ne memorizza il risultato.
 
 \end{document}
